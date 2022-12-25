@@ -16,8 +16,8 @@ extern "C" {
 #include <stack>
 
 
-const int SCREEN_WIDTH = 640;
-const int SCREEN_HEIGHT = 480;
+#define SCREEN_WIDTH 640
+#define SCREEN_HEIGHT 480
 #define FPS 30
 #define LEGEND_HEIGHT 50
 #define GRASS_HEIGHT 32
@@ -61,8 +61,17 @@ struct game_t {
 };
 
 
+struct textures_t {
+	SDL_Texture* carTexture = NULL;
+	SDL_Texture* grass_texture = NULL;
+};
 
-void renderCar(car_t& car, SDL_Renderer* renderer, SDL_Texture* carTexture);
+
+void check_for_colision(car_t& car, game_t& game);
+int init(SDL_Window*& window, SDL_Renderer*& renderer, SDL_Surface*& screen, SDL_Texture*& scrtex);
+void free_memory(SDL_Surface* screen, SDL_Texture* scrtex, SDL_Renderer* renderer, SDL_Window* window);
+int load_charset(SDL_Surface*& charset);
+void render_car(car_t& car, SDL_Renderer* renderer, SDL_Texture* carTexture);
 void events_handling(SDL_Event& event, bool& running, car_t& car, game_t& game, gameTime_t& time);
 void calculate_time(gameTime_t& time);
 void render_legend(SDL_Surface* screen, SDL_Surface* charset, gameTime_t& time, fps_t& game_fps, SDL_Renderer* renderer, SDL_Texture* scrtex, game_t game);
@@ -75,8 +84,6 @@ void render_grass(game_t& game, SDL_Renderer* renderer, SDL_Texture* roadTexture
 void render_implemented(SDL_Surface* screen, SDL_Surface* charset, SDL_Texture* scrtex, SDL_Renderer* renderer);
 void stop_game(car_t& car, gameTime_t& time, game_t& game);
 
-// narysowanie napisu txt na powierzchni screen, zaczynajπc od punktu (x, y)
-// charset to bitmapa 128x128 zawierajπca znaki
 // draw a text txt on surface screen, starting from the point (x, y)
 // charset is a 128x128 bitmap containing character images
 void DrawString(SDL_Surface* screen, int x, int y, const char* text,
@@ -102,8 +109,6 @@ void DrawString(SDL_Surface* screen, int x, int y, const char* text,
 };
 
 
-// narysowanie na ekranie screen powierzchni sprite w punkcie (x, y)
-// (x, y) to punkt úrodka obrazka sprite na ekranie
 // draw a surface sprite on a surface screen in point (x, y)
 // (x, y) is the center of sprite on screensprite
 void DrawSurface(SDL_Surface* screen, SDL_Surface* sprite, int x, int y) {
@@ -116,7 +121,6 @@ void DrawSurface(SDL_Surface* screen, SDL_Surface* sprite, int x, int y) {
 };
 
 
-// rysowanie pojedynczego pixela
 // draw a single pixel
 void DrawPixel(SDL_Surface* surface, int x, int y, Uint32 color) {
 	int bpp = surface->format->BytesPerPixel;
@@ -125,8 +129,6 @@ void DrawPixel(SDL_Surface* surface, int x, int y, Uint32 color) {
 };
 
 
-// rysowanie linii o d≥ugoúci l w pionie (gdy dx = 0, dy = 1) 
-// bπdü poziomie (gdy dx = 1, dy = 0)
 // draw a vertical (when dx = 0, dy = 1) or horizontal (when dx = 1, dy = 0) line
 void DrawLine(SDL_Surface* screen, int x, int y, int l, int dx, int dy, Uint32 color) {
 	for (int i = 0; i < l; i++) {
@@ -137,7 +139,6 @@ void DrawLine(SDL_Surface* screen, int x, int y, int l, int dx, int dy, Uint32 c
 };
 
 
-// rysowanie prostokπta o d≥ugoúci bokÛw l i k
 // draw a rectangle of size l by k
 void DrawRectangle(SDL_Surface* screen, int x, int y, int l, int k,
 	Uint32 outlineColor, Uint32 fillColor) {
@@ -151,38 +152,19 @@ void DrawRectangle(SDL_Surface* screen, int x, int y, int l, int k,
 };
 
 
-
-void check_for_colision(car_t& car, game_t& game);
-
-int init(SDL_Window*& window, SDL_Renderer*& renderer, SDL_Surface*& screen, SDL_Texture*& scrtex);
-
-void free_memory(SDL_Surface* screen, SDL_Texture* scrtex, SDL_Renderer* renderer, SDL_Window* window);
-
-int load_charset(SDL_Surface*& charset);
-
-
-
-struct textures_t {
-	SDL_Texture* carTexture = NULL;
-	SDL_Texture* grass_texture = NULL;
-};
-
-
 SDL_Texture* load_texture(char s[], SDL_Renderer* renderer) {
 	SDL_Surface* carSurface = SDL_LoadBMP(s);
-	if (carSurface == nullptr)
-	{
+	if (carSurface == nullptr) {
+		std::cout << SDL_GetError();
 		return NULL;
 	}
 	SDL_Texture* texture = SDL_CreateTextureFromSurface(renderer, carSurface);
 	SDL_FreeSurface(carSurface);
-	if (texture == nullptr)
-	{
-		return NULL;
-	}
 	return texture;
 }
 
+
+void free_textures(textures_t& textures);
 
 int main(int argc, char* argv[])
 {
@@ -198,7 +180,7 @@ int main(int argc, char* argv[])
 	SDL_Event event;
 	SDL_Window* window;
 	SDL_Renderer* renderer;
-	SDL_Surface* screen, * charset;
+	SDL_Surface* screen, * charset = NULL;
 	SDL_Texture* scrtex;
 	textures_t textures;
 
@@ -208,8 +190,7 @@ int main(int argc, char* argv[])
 		textures.carTexture = load_texture("carasd.bmp", renderer);
 		textures.grass_texture = load_texture("grass.bmp", renderer);
 		if (charset == NULL || textures.grass_texture == NULL || textures.carTexture == NULL) {
-			SDL_DestroyTexture(textures.carTexture);
-			SDL_DestroyTexture(textures.grass_texture);
+			free_textures(textures);;
 			free_memory(screen, scrtex, renderer, window);
 			SDL_Quit();
 		}
@@ -217,7 +198,7 @@ int main(int argc, char* argv[])
 
 	generate_start_road(game);
 
-	// PÍtla g≥Ûwna gry
+	//Main game loop
 	while (game.running)
 	{
 		if (!game.stop) {
@@ -226,7 +207,7 @@ int main(int argc, char* argv[])
 			render_legend(screen, charset, time, game_fps, renderer, scrtex, game);
 			render_grass(game, renderer, textures.grass_texture, car);
 			render_implemented(screen, charset, scrtex, renderer);
-			renderCar(car, renderer, textures.carTexture);
+			render_car(car, renderer, textures.carTexture);
 			game.score += 1 * car.speed;
 			SDL_RenderPresent(renderer);
 			cap_fps(game_fps, car);
@@ -242,25 +223,32 @@ int main(int argc, char* argv[])
 
 	}
 
-	// Czyszczenie zasobÛw
-	SDL_DestroyTexture(textures.carTexture);
-	SDL_DestroyTexture(textures.grass_texture);
+	free_textures(textures);
 	free_memory(screen, scrtex, renderer, window);
 	SDL_Quit();
 
-	return EXIT_SUCCESS;
+	return 1;
 }
+
+
+void free_textures(textures_t& textures)
+{
+	SDL_DestroyTexture(textures.carTexture);
+	SDL_DestroyTexture(textures.grass_texture);
+}
+
 
 int load_charset(SDL_Surface*& charset)
 {
-	// wczytanie obrazka cs8x8.bmp
 	charset = SDL_LoadBMP("./cs8x8.bmp");
 	if (charset == NULL) {
+		std::cout << SDL_GetError();
 		return NULL;
 	};
 	SDL_SetColorKey(charset, true, 0x000000);
 	return SUCCESS;
 }
+
 
 void free_memory(SDL_Surface* screen, SDL_Texture* scrtex, SDL_Renderer* renderer, SDL_Window* window)
 {
@@ -269,6 +257,7 @@ void free_memory(SDL_Surface* screen, SDL_Texture* scrtex, SDL_Renderer* rendere
 	SDL_DestroyRenderer(renderer);
 	SDL_DestroyWindow(window);
 }
+
 
 int init(SDL_Window*& window, SDL_Renderer*& renderer, SDL_Surface*& screen, SDL_Texture*& scrtex)
 {
@@ -296,6 +285,7 @@ int init(SDL_Window*& window, SDL_Renderer*& renderer, SDL_Surface*& screen, SDL
 	return SUCCESS;
 }
 
+
 void check_for_colision(car_t& car, game_t& game)
 {
 	if (car.x + CAR_WIDTH / 2 <= game.road_width) {
@@ -305,6 +295,7 @@ void check_for_colision(car_t& car, game_t& game)
 		car.speed = 0;
 	}
 }
+
 
 void render_implemented(SDL_Surface* screen, SDL_Surface* charset, SDL_Texture* scrtex, SDL_Renderer* renderer)
 {
@@ -553,7 +544,7 @@ void restart_game(game_t& game, gameTime_t& time) {
 
 
 // Renderowanie samochodu
-void renderCar(car_t& car, SDL_Renderer* renderer, SDL_Texture* carTexture)
+void render_car(car_t& car, SDL_Renderer* renderer, SDL_Texture* carTexture)
 {
 	SDL_Rect carRect;
 	carRect.x = car.x;
