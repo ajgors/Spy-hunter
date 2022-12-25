@@ -26,7 +26,8 @@ const int SCREEN_HEIGHT = 480;
 #define CAR_WIDTH 90
 #define CAR_X (SCREEN_WIDTH / 2) - (CAR_WIDTH / 2)
 #define CAR_Y (SCREEN_HEIGHT / 2) + (LEGEND_HEIGHT / 2)
-
+#define ERROR 0
+#define SUCCESS 1
 
 
 struct car_t {
@@ -68,7 +69,7 @@ void render_legend(SDL_Surface* screen, SDL_Surface* charset, gameTime_t& time, 
 void cap_fps(fps_t& game_fps, car_t& car);
 void generate_road_que(game_t& game);
 void add_from_que_to_road(game_t& game);
-void generate_road(game_t& game);
+void generate_start_road(game_t& game);
 void restart_game(game_t& game, gameTime_t& time);
 void render_grass(game_t& game, SDL_Renderer* renderer, SDL_Texture* roadTexture, car_t& car);
 void render_implemented(SDL_Surface* screen, SDL_Surface* charset, SDL_Texture* scrtex, SDL_Renderer* renderer);
@@ -153,116 +154,68 @@ void DrawRectangle(SDL_Surface* screen, int x, int y, int l, int k,
 
 void check_for_colision(car_t& car, game_t& game);
 
+int init(SDL_Window*& window, SDL_Renderer*& renderer, SDL_Surface*& screen, SDL_Texture*& scrtex);
+
+void free_memory(SDL_Surface* screen, SDL_Texture* scrtex, SDL_Renderer* renderer, SDL_Window* window);
+
+int load_charset(SDL_Surface*& charset);
+
+
+
+struct textures_t {
+	SDL_Texture* carTexture = NULL;
+	SDL_Texture* grass_texture = NULL;
+};
+
+
+SDL_Texture* load_texture(char s[], SDL_Renderer* renderer) {
+	SDL_Surface* carSurface = SDL_LoadBMP(s);
+	if (carSurface == nullptr)
+	{
+		return NULL;
+	}
+	SDL_Texture* texture = SDL_CreateTextureFromSurface(renderer, carSurface);
+	SDL_FreeSurface(carSurface);
+	if (texture == nullptr)
+	{
+		return NULL;
+	}
+	return texture;
+}
+
+
 int main(int argc, char* argv[])
 {
 	std::srand(std::time(nullptr));
-	SDL_Surface* screen, * charset;
-	SDL_Texture* scrtex;
 	gameTime_t time;
 	car_t car;
 	fps_t game_fps;
+
 	game_t game;
 	init_vector(&game.que);
 	init_vector(&game.road);
+
 	SDL_Event event;
-
-	// Inicjalizacja SDL
-	if (SDL_Init(SDL_INIT_VIDEO) < 0)
-	{
-		std::cout << "SDL nie zosta³o zainicjalizowane. B³¹d: " << SDL_GetError() << std::endl;
-		return EXIT_FAILURE;
-	}
-
-	// Tworzenie okna
-	SDL_Window* window = SDL_CreateWindow("Spy Hunter", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, SCREEN_WIDTH, SCREEN_HEIGHT, SDL_WINDOW_SHOWN);
-	if (window == nullptr)
-	{
-		std::cout << "Okno nie zosta³o utworzone. B³¹d: " << SDL_GetError() << std::endl;
-		SDL_Quit();
-		return EXIT_FAILURE;
-	}
-
-	// Tworzenie renderera
-	SDL_Renderer* renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED);
-	if (renderer == nullptr)
-	{
-		std::cout << "Renderer nie zosta³ utworzony. B³¹d: " << SDL_GetError() << std::endl;
-		SDL_DestroyWindow(window);
-		SDL_Quit();
-		return EXIT_FAILURE;
-	}
+	SDL_Window* window;
+	SDL_Renderer* renderer;
+	SDL_Surface* screen, * charset;
+	SDL_Texture* scrtex;
+	textures_t textures;
 
 
-	screen = SDL_CreateRGBSurface(0, SCREEN_WIDTH, SCREEN_HEIGHT, 32,
-		0x00FF0000, 0x0000FF00, 0x000000FF, 0xFF000000);
-
-	scrtex = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_ARGB8888,
-		SDL_TEXTUREACCESS_STREAMING,
-		SCREEN_WIDTH, SCREEN_HEIGHT);
-
-
-
-	//Wczytanie grafiki samochodu
-	SDL_Surface* carSurface = SDL_LoadBMP("carasd.bmp");
-	if (carSurface == nullptr)
-	{
-		std::cout << "Nie uda³o siê wczytaæ grafiki samochodu. B³¹d: " << SDL_GetError() << std::endl;
-		SDL_DestroyRenderer(renderer);
-		SDL_DestroyWindow(window);
-		SDL_Quit();
-		return EXIT_FAILURE;
-	}
-	SDL_Texture* carTexture = SDL_CreateTextureFromSurface(renderer, carSurface);
-	SDL_FreeSurface(carSurface);
-	if (carTexture == nullptr)
-	{
-		std::cout << "Nie uda³o siê utworzyæ tekstury samochodu. B³¹d: " << SDL_GetError() << std::endl;
-		SDL_DestroyRenderer(renderer);
-		SDL_DestroyWindow(window);
-		SDL_Quit();
-		return EXIT_FAILURE;
-	}
-
-
-	// wczytanie obrazka cs8x8.bmp
-	charset = SDL_LoadBMP("./cs8x8.bmp");
-	if (charset == NULL) {
-		printf("SDL_LoadBMP(cs8x8.bmp) error: %s\n", SDL_GetError());
-		SDL_FreeSurface(screen);
-		SDL_DestroyTexture(scrtex);
-		SDL_DestroyWindow(window);
-		SDL_DestroyRenderer(renderer);
-		SDL_Quit();
-		return 1;
+	if (init(window, renderer, screen, scrtex)) {
+		load_charset(charset);
+		textures.carTexture = load_texture("carasd.bmp", renderer);
+		textures.grass_texture = load_texture("grass.bmp", renderer);
+		if (charset == NULL || textures.grass_texture == NULL || textures.carTexture == NULL) {
+			SDL_DestroyTexture(textures.carTexture);
+			SDL_DestroyTexture(textures.grass_texture);
+			free_memory(screen, scrtex, renderer, window);
+			SDL_Quit();
+		}
 	};
-	SDL_SetColorKey(charset, true, 0x000000);
 
-
-	// Wczytanie grafiki trawy
-	SDL_Surface* roadSurface = SDL_LoadBMP("grass.bmp");
-	if (roadSurface == nullptr)
-	{
-		std::cout << "Nie uda³o siê wczytaæ grafiki drogi. B³¹d: " << SDL_GetError() << std::endl;
-		SDL_DestroyTexture(carTexture);
-		SDL_DestroyRenderer(renderer);
-		SDL_DestroyWindow(window);
-		SDL_Quit();
-		return EXIT_FAILURE;
-	}
-	SDL_Texture* roadTexture = SDL_CreateTextureFromSurface(renderer, roadSurface);
-	SDL_FreeSurface(roadSurface);
-	if (roadTexture == nullptr)
-	{
-		std::cout << "Nie uda³o siê utworzyæ tekstury drogi. B³¹d: " << SDL_GetError() << std::endl;
-		SDL_DestroyTexture(carTexture);
-		SDL_DestroyRenderer(renderer);
-		SDL_DestroyWindow(window);
-		SDL_Quit();
-		return EXIT_FAILURE;
-	}
-
-	generate_road(game);
-
+	generate_start_road(game);
 
 	// Pêtla g³ówna gry
 	while (game.running)
@@ -271,9 +224,9 @@ int main(int argc, char* argv[])
 			game_fps.start_loop = SDL_GetTicks();
 			calculate_time(time);
 			render_legend(screen, charset, time, game_fps, renderer, scrtex, game);
-			render_grass(game, renderer, roadTexture, car);
+			render_grass(game, renderer, textures.grass_texture, car);
 			render_implemented(screen, charset, scrtex, renderer);
-			renderCar(car, renderer, carTexture);
+			renderCar(car, renderer, textures.carTexture);
 			game.score += 1 * car.speed;
 			SDL_RenderPresent(renderer);
 			cap_fps(game_fps, car);
@@ -290,13 +243,57 @@ int main(int argc, char* argv[])
 	}
 
 	// Czyszczenie zasobów
-	SDL_DestroyTexture(carTexture);
-	SDL_DestroyTexture(roadTexture);
-	SDL_DestroyRenderer(renderer);
-	SDL_DestroyWindow(window);
+	SDL_DestroyTexture(textures.carTexture);
+	SDL_DestroyTexture(textures.grass_texture);
+	free_memory(screen, scrtex, renderer, window);
 	SDL_Quit();
 
 	return EXIT_SUCCESS;
+}
+
+int load_charset(SDL_Surface*& charset)
+{
+	// wczytanie obrazka cs8x8.bmp
+	charset = SDL_LoadBMP("./cs8x8.bmp");
+	if (charset == NULL) {
+		return NULL;
+	};
+	SDL_SetColorKey(charset, true, 0x000000);
+	return SUCCESS;
+}
+
+void free_memory(SDL_Surface* screen, SDL_Texture* scrtex, SDL_Renderer* renderer, SDL_Window* window)
+{
+	SDL_FreeSurface(screen);
+	SDL_DestroyTexture(scrtex);
+	SDL_DestroyRenderer(renderer);
+	SDL_DestroyWindow(window);
+}
+
+int init(SDL_Window*& window, SDL_Renderer*& renderer, SDL_Surface*& screen, SDL_Texture*& scrtex)
+{
+
+	if (SDL_Init(SDL_INIT_EVERYTHING) != 0) {
+		printf("SDL_Init error: %s\n", SDL_GetError());
+		return ERROR;
+	}
+
+	int rc;
+	rc = SDL_CreateWindowAndRenderer(SCREEN_WIDTH, SCREEN_HEIGHT, 0,
+		&window, &renderer);
+	if (rc != 0) {
+		SDL_Quit();
+		printf("SDL_CreateWindowAndRenderer error: %s\n", SDL_GetError());
+		return ERROR;
+	};
+
+	screen = SDL_CreateRGBSurface(0, SCREEN_WIDTH, SCREEN_HEIGHT, 32,
+		0x00FF0000, 0x0000FF00, 0x000000FF, 0xFF000000);
+
+	scrtex = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_ARGB8888,
+		SDL_TEXTUREACCESS_STREAMING,
+		SCREEN_WIDTH, SCREEN_HEIGHT);
+	return SUCCESS;
 }
 
 void check_for_colision(car_t& car, game_t& game)
@@ -361,7 +358,7 @@ void render_grass(game_t& game, SDL_Renderer* renderer, SDL_Texture* roadTexture
 }
 
 
-void generate_road(game_t& game)
+void generate_start_road(game_t& game)
 {
 	for (int i = 0; i < SCREEN_HEIGHT / GRASS_HEIGHT; ++i)
 	{
@@ -547,7 +544,7 @@ void restart_game(game_t& game, gameTime_t& time) {
 	free(game.road.ptr);
 	init_vector(&game.road);
 	game.road.count = 0;
-	generate_road(game);
+	generate_start_road(game);
 	game.score = 0;
 	time.worldTime = 0;
 	time.t1 = SDL_GetTicks();
