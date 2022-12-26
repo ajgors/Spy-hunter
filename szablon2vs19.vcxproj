@@ -19,6 +19,7 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="cars_vector.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="vector.cpp" />
   </ItemGroup>
@@ -34,6 +35,7 @@
     <Image Include="grass.bmp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="cars_vector.h" />
     <ClInclude Include="main.h" />
     <ClInclude Include="vector.h" />
   </ItemGroup>

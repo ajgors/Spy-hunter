@@ -2,51 +2,59 @@
 #include <stdlib.h>
 #include <string.h>
 
+
+
+struct car_t {
+    int x;
+    int y;
+    int speed;
+    bool in_grass;
+};
 //Struktura opisuj¹ca wektor liczb ca³kowitych.
 //j-ta komórka wektora w (0 <= j < w.count) jest dostêpna jest jako w.ptr[j].
 typedef struct {
     int allocated_size; // rozmiar zaalokowanego bufora
     int count;          // liczba elementów w wektorze
-    int* ptr;           // wskaŸnik do pocz¹tku bufora
-} vector_t;
+    car_t* ptr;           // wskaŸnik do pocz¹tku bufora
+} car_vector_t;
 
 
 // Inicjalizacja wektora *v. Pocz¹tkowo tablica bêdzie mia³a rozmiar 1.
-void init_vector(vector_t* v) {
+void init_car_vector(car_vector_t* v) {
     v->count = 0;
     v->allocated_size = 1;
-    v->ptr = (int*)malloc(v->allocated_size * sizeof(int));
+    v->ptr = (car_t*)malloc(v->allocated_size * sizeof(car_t));
 }
 
 // Realokacja wektora *v, tak aby bufor mia³ pojemnoœæ reallocate_size.
-void reallocate(vector_t* v, int reallocate_size) {
+void car_reallocate(car_vector_t* v, int reallocate_size) {
     v->allocated_size = reallocate_size;
-    int* newPtr = (int*)malloc(v->allocated_size * sizeof(int));
-    memcpy(newPtr, v->ptr, v->count * sizeof(int));
+    car_t* newPtr = (car_t*)malloc(v->allocated_size * sizeof(car_t));
+    memcpy(newPtr, v->ptr, v->count * sizeof(car_t));
     free(v->ptr);
     v->ptr = newPtr;
 }
 
 
 // Umieszczenie wartoœci val jako nowego (koñcowego) elementu wektora *v.
-void push_back(vector_t* v, int val) {
+void car_push_back(car_vector_t* v, car_t val) {
     //Realokacja wymagana, gdy bufor nie jest w stanie pomieœciæ wiêcej elementów.
     if (v->count == v->allocated_size)
-        reallocate(v, 2 * v->allocated_size);
+        car_reallocate(v, 2 * v->allocated_size);
     v->ptr[v->count] = val;
     v->count++;
 }
 
 
 // Pobranie i usuniêcie wartoœci koñcowego elementu wektora *v.
-int pop_back(vector_t* v) {
+car_t car_pop_back(car_vector_t* v) {
     v->count--;
-    int retv = v->ptr[v->count];
+    car_t retv = v->ptr[v->count];
 
     //Realokacja realizowana, gdy rozmiar bufora jest ponad dwukrotnie
     //nadmiarowy w stosunku do liczby przechowywanych elementów.
     if (4 * v->count <= v->allocated_size)
-        reallocate(v, v->allocated_size / 2);
+        car_reallocate(v, v->allocated_size / 2);
     return retv;
 }
 
