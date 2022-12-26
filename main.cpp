@@ -628,10 +628,10 @@ void render_legend(SDL_Surface* screen, SDL_Surface* charset, gameTime_t& time, 
 	sprintf(text, "Igor Stadnicki 193435");
 	DrawString(screen, screen->w / 2 - strlen(text) * 8 / 2, 5, text, charset);
 	;
-	sprintf(text, "Szablon drugiego zadania, czas trwania = %.1lf s  %.0lf klatek / s, score: %lf", time.worldTime, (float)game_fps.fps, game.score);
+	sprintf(text, "Time = %.1lf s  score: %.0lf", time.worldTime, game.score);
 	DrawString(screen, screen->w / 2 - strlen(text) * 8 / 2, 20, text, charset);
 
-	sprintf(text, "Esc - wyjscie, \030 - przyspieszenie, \031 - zwolnienie");
+	sprintf(text, "Esc - wyjscie, \030 - przyspieszenie, \031 - zwolnienie, n - nowa gra" );
 	DrawString(screen, screen->w / 2 - strlen(text) * 8 / 2, 35, text, charset);
 
 	SDL_UpdateTexture(scrtex, NULL, screen->pixels, screen->pitch);
