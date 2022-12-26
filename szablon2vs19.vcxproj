@@ -25,7 +25,9 @@
   <ItemGroup>
     <Image Include="..\..\..\car2 - Copy.bmp" />
     <Image Include="..\..\..\carasd.bmp" />
+    <Image Include="..\..\..\car_red.bmp" />
     <Image Include="..\..\template-project-2\template-project-2\eti.bmp" />
+    <Image Include="car_blue.bmp" />
     <Image Include="road.bmp" />
     <Image Include="car.bmp" />
     <Image Include="cs8x8.bmp" />
