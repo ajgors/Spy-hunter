@@ -25,16 +25,16 @@ extern "C" {
 
 using namespace std;
 
-#define SCREEN_WIDTH 640
+#define SCREEN_WIDTH 650
 #define SCREEN_HEIGHT 480
 #define FPS 30
 #define LEGEND_HEIGHT 50
 #define GRASS_HEIGHT 32
-#define GRASS_WIDTH 20
+#define GRASS_WIDTH 25
 #define CAR_HEIGTH 74
 #define CAR_WIDTH 36
 #define CAR_X (SCREEN_WIDTH / 2) - (CAR_WIDTH / 2)
-#define CAR_Y (SCREEN_HEIGHT / 2) + (LEGEND_HEIGHT / 2)
+#define CAR_Y (SCREEN_HEIGHT / 2) + (LEGEND_HEIGHT)
 #define ERROR 0
 #define SUCCESS 1
 #define CAR_MOVE_PIXELS 25
@@ -331,7 +331,7 @@ void generate_random_car(vector<car_t>& cars, textures_t textures, game_t& game)
 		int x = (rand() & road_width) + 1;
 		int left = x % CAR_MOVE_PIXELS;
 		x = x - left;
-		if (x > SCREEN_WIDTH / 2) x -= CAR_WIDTH;
+		if (x > SCREEN_WIDTH / 2) x -= GRASS_WIDTH;
 
 		random_car.x = game.grass_width + x;
 		random_car.y = LEGEND_HEIGHT;
@@ -388,7 +388,7 @@ int main(int argc, char* argv[])
 
 			calculate_time(time);
 
-			if (cars.size() < 5) {
+			if (cars.size() < 7) {
 				generate_random_car(cars, textures, game);
 			}
 
@@ -399,10 +399,10 @@ int main(int argc, char* argv[])
 
 			vector<car_t> tmp_cars;
 			for (int i = 0; i < cars.size(); i++) {
-				cout << cars[0].y << endl;
 
 				if (cars[i].y > SCREEN_HEIGHT) continue;
-				if (cars[i].y < LEGEND_HEIGHT) continue;
+				//if (cars[i].y < LEGEND_HEIGHT - 10) continue;
+				if (cars[i].y < 0) continue;
 				if (cars[i].y - CAR_HEIGTH < SCREEN_HEIGHT) {
 					tmp_cars.push_back(cars[i]);
 				}
@@ -412,14 +412,13 @@ int main(int argc, char* argv[])
 			}
 			cars.clear();
 			cars = tmp_cars;
-
-			cout << car.x << endl;
-			//cout << cars.size() << endl; 
+			std::cout << car.x << std::endl;
+			cout << SCREEN_WIDTH / 2 - GRASS_WIDTH / 2;
 			for (int i = 0; i < cars.size(); i++) {
 				render_random_car(cars[i], renderer, textures.blue_car);
 				int n = (rand() % 100) + 1;
 
-				if (n == 1 && cars[i].speed + 1 <= 4) cars[i].speed += 1;
+				if (n == 1 && cars[i].speed + 1 < 4) cars[i].speed += 1;
 				if (n == 100 && cars[i].speed - 1 > 0) cars[i].speed -= 1;
 
 				if (game.road.ptr[0] > game.road.ptr[1]) {
@@ -429,6 +428,8 @@ int main(int argc, char* argv[])
 					else if (cars[i].x + CAR_WIDTH / 2 > SCREEN_WIDTH - game.road.ptr[0]) {
 						cars[i].x -= CAR_MOVE_PIXELS;
 					}
+					if (game.road.ptr[0] == MIN_GRASS_WIDTH) cars[i].x -= CAR_MOVE_PIXELS;
+
 				}
 				if (car.speed == cars[i].speed + 2) {
 					cars[i].y += 4;
@@ -441,6 +442,16 @@ int main(int argc, char* argv[])
 				}
 				if (car.speed == cars[i].speed - 2) {
 					cars[i].y -= 4;
+				}
+
+				if (car.y - CAR_HEIGTH < cars[i].y && car.y > cars[i].y && car.x + CAR_WIDTH >= cars[i].x && car.x <= cars[i].x + CAR_WIDTH) car.speed = 0;
+
+				for (int k = 0; k < cars.size(); k++) {
+					if (k == i) continue;
+					if (cars[i].y - CAR_HEIGTH < cars[k].y && cars[i].y > cars[k].y && cars[i].x + CAR_WIDTH >= cars[k].x && cars[i].x <= cars[k].x + CAR_WIDTH) {
+
+						cars[i].y += 30;
+					}
 				}
 			}
 			SDL_RenderPresent(renderer);
@@ -550,6 +561,12 @@ void check_for_colision(car_t& car, game_t& game)
 		car.speed = 0;
 		car.in_grass = true;
 	}
+	else if (game.grass_width == MIN_GRASS_WIDTH) {
+		if (car.x == CAR_X) {
+			car.speed = 0;
+			car.in_grass = true;
+		};
+	}
 }
 
 
@@ -595,6 +612,15 @@ void render_grass(game_t& game, SDL_Renderer* renderer, SDL_Texture* roadTexture
 
 		if (roadRect_right.y + CAR_HEIGTH / 2 >= car.y) {
 			game.grass_width = roadRect_right.w;
+		}
+
+		if (game.road.ptr[i] == MIN_GRASS_WIDTH) {
+			SDL_Rect roadRect_middle;
+			roadRect_middle.x = SCREEN_WIDTH / 2 - GRASS_WIDTH / 2;
+			roadRect_middle.y = GRASS_HEIGHT * i + LEGEND_HEIGHT;
+			roadRect_middle.w = MIN_GRASS_WIDTH;
+			roadRect_middle.h = GRASS_HEIGHT;
+			SDL_RenderCopy(renderer, roadTexture, nullptr, &roadRect_middle);
 		}
 
 		SDL_RenderCopy(renderer, roadTexture, nullptr, &roadRect_left);
@@ -745,7 +771,6 @@ void events_handling(SDL_Event& event, car_t& car, game_t& game, gameTime_t& tim
 		switch (event.type) {
 		case SDL_KEYDOWN:
 			if (event.key.keysym.sym == SDLK_LEFT && !game.pause) {
-				std::cout << car.x << std::endl;
 				if (car.x + CAR_MOVE_PIXELS > 0)
 				{
 					car.in_grass = false;
