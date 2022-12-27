@@ -60,6 +60,26 @@ struct textures_t {
 };
 
 
+void clear_cars_outside_screen(game_t &game) {
+	car_vector_t tmp_cars;
+	init_car_vector(&tmp_cars);
+
+	for (int i = 0; i < game.cars.count; i++) {
+		if (game.cars.ptr[i].y > SCREEN_HEIGHT) continue;
+		if (game.cars.ptr[i].y < -CAR_HEIGTH) continue;
+		if (game.cars.ptr[i].y - CAR_HEIGTH < SCREEN_HEIGHT) {
+			car_push_back(&tmp_cars, game.cars.ptr[i]);
+		}
+		else if (game.cars.ptr[i].y + CAR_HEIGTH > LEGEND_HEIGHT) {
+			car_push_back(&tmp_cars, game.cars.ptr[i]);
+		}
+	}
+	free(game.cars.ptr);
+	init_car_vector(&game.cars);
+	game.cars = tmp_cars;
+}
+
+
 int main(int argc, char* argv[])
 {
 	std::srand(std::time(nullptr));
@@ -98,6 +118,7 @@ int main(int argc, char* argv[])
 	while (game.running)
 	{
 		if (!game.pause && !game.save_screen) {
+			SDL_RenderClear(renderer);
 			game_fps.start_loop = SDL_GetTicks();
 			generate_road_que(game);
 			add_from_que_to_road(game, car);
@@ -107,33 +128,12 @@ int main(int argc, char* argv[])
 			check_for_colision(car, game);
 			render_implemented(screen, charset, scrtex, renderer);
 			render_car(car, renderer, textures.red_car);
+			clear_cars_outside_screen(game);
 
-			car_vector_t tmp_cars;
-			init_car_vector(&tmp_cars);
-
-			for (int i = 0; i < game.cars.count; i++) {
-				if (game.cars.ptr[i].y > SCREEN_HEIGHT) continue;
-				//if (cars[i].y < LEGEND_HEIGHT - 10) continue;
-				if (game.cars.ptr[i].y < 0) continue;
-				if (game.cars.ptr[i].y - CAR_HEIGTH < SCREEN_HEIGHT) {
-					car_push_back(&tmp_cars, game.cars.ptr[i]);
-				}
-				else if (game.cars.ptr[i].y + CAR_HEIGTH > LEGEND_HEIGHT) {
-					car_push_back(&tmp_cars, game.cars.ptr[i]);
-				}
-			}
-
-			free(game.cars.ptr);
-			init_car_vector(&game.cars);
-			game.cars = tmp_cars;
-
-
-			//std::cout << car.x << std::endl;
-			//cout << SCREEN_WIDTH / 2 - GRASS_WIDTH / 2;
-			cout << game.cars.count << endl;;
+			cout << game.cars.count << endl;
 
 			for (int i = 0; i < game.cars.count; i++) {
-				render_random_car(game.cars.ptr[i], renderer, textures.blue_car);
+				render_car(game.cars.ptr[i], renderer, textures.blue_car);
 				int n = (rand() % 100) + 1;
 
 				if (n == 1 && game.cars.ptr[i].speed + 1 < 4) game.cars.ptr[i].speed += 1;
@@ -156,13 +156,16 @@ int main(int argc, char* argv[])
 					game.cars.ptr[i].y += 2;
 				}
 				if (car.speed == game.cars.ptr[i].speed - 1) {
-					game.cars.ptr[i].y -= 2;
-				}
-				if (car.speed == game.cars.ptr[i].speed - 2) {
 					game.cars.ptr[i].y -= 4;
 				}
+				if (car.speed == game.cars.ptr[i].speed - 2) {
+					game.cars.ptr[i].y -= 6;
+				}
+				if (car.speed == game.cars.ptr[i].speed - 3) {
+					game.cars.ptr[i].y -= 10;
+				}
 
-			/*	if (car.y - CAR_HEIGTH < game.cars.ptr[i].y && car.y > game.cars.ptr[i].y && car.x + CAR_WIDTH >= game.cars.ptr[i].x && car.x <= game.cars.ptr[i].x + CAR_WIDTH) car.speed = 0;
+				if (car.y - CAR_HEIGTH < game.cars.ptr[i].y && car.y > game.cars.ptr[i].y && car.x + CAR_WIDTH >= game.cars.ptr[i].x && car.x <= game.cars.ptr[i].x + CAR_WIDTH) car.speed = 0;
 
 				for (int k = 0; k < game.cars.count; k++) {
 					if (k == i) continue;
@@ -170,11 +173,11 @@ int main(int argc, char* argv[])
 
 						game.cars.ptr[i].y += 30;
 					}
-				}*/
+				}
 			}
-			SDL_RenderPresent(renderer);
 			game.score += 1 * car.speed;
 			render_legend(screen, charset, time, game_fps, renderer, scrtex, game);
+			SDL_RenderPresent(renderer);
 
 		}
 
@@ -423,7 +426,7 @@ void save_game(game_t& game, gameTime_t& game_time, car_t& car) {
 };
 
 
-void generate_random_car(textures_t textures, game_t *game) {
+void generate_random_car(textures_t textures, game_t* game) {
 	if (game->cars.count < 7) {
 		int n = (rand() % 99) + 1;
 		if (n == 1) {
@@ -436,7 +439,7 @@ void generate_random_car(textures_t textures, game_t *game) {
 			if (x > SCREEN_WIDTH / 2) x -= GRASS_WIDTH;
 
 			random_car.x = game->grass_width + x;
-			random_car.y = LEGEND_HEIGHT;
+			random_car.y = 0 - CAR_HEIGTH/2;
 
 			car_push_back(&game->cars, random_car);
 		}
@@ -528,6 +531,7 @@ void render_implemented(SDL_Surface* screen, SDL_Surface* charset, SDL_Texture* 
 	DrawString(screen, screen->w - IMPLEMENTED_WIDTH, screen->h - IMPLEMENTED_HEIGHT, text, charset);
 	sprintf(text, "e g");
 	DrawString(screen, screen->w - IMPLEMENTED_WIDTH, screen->h - (IMPLEMENTED_HEIGHT - 10), text, charset);
+
 	SDL_UpdateTexture(scrtex, NULL, screen->pixels, screen->pitch);
 
 	SDL_Rect roadRect_left;
@@ -698,8 +702,20 @@ void render_legend(SDL_Surface* screen, SDL_Surface* charset, gameTime_t& time, 
 	sprintf(text, "Esc - wyjscie, \030 - przyspieszenie, \031 - zwolnienie, n - nowa gra");
 	DrawString(screen, screen->w / 2 - strlen(text) * 8 / 2, 35, text, charset);
 
+
 	SDL_UpdateTexture(scrtex, NULL, screen->pixels, screen->pitch);
-	SDL_RenderCopy(renderer, scrtex, NULL, NULL);
+
+	SDL_Rect roadRect_left;
+	roadRect_left.x = 0;
+	roadRect_left.y = 0;
+	roadRect_left.w = SCREEN_WIDTH;
+	roadRect_left.h = LEGEND_HEIGHT;
+
+
+
+	//SDL_UpdateTexture(scrtex, NULL, screen->pixels, screen->pitch);
+	//SDL_RenderCopy(renderer, scrtex, NULL, NULL);
+	SDL_RenderCopy(renderer, scrtex, &roadRect_left, &roadRect_left);
 
 }
 
@@ -792,18 +808,5 @@ void render_car(car_t& car, SDL_Renderer* renderer, SDL_Texture* carTexture)
 	carRect.y = car.y;
 	carRect.w = CAR_WIDTH;
 	carRect.h = CAR_HEIGTH;
-	SDL_RenderCopy(renderer, carTexture, nullptr, &carRect);
-}
-
-
-void render_random_car(car_t& car, SDL_Renderer* renderer, SDL_Texture* carTexture)
-{
-	SDL_Rect carRect;
-	carRect.x = car.x;
-	carRect.y = car.y;
-	carRect.w = CAR_WIDTH;
-	carRect.h = CAR_HEIGTH;
-
-
 	SDL_RenderCopy(renderer, carTexture, nullptr, &carRect);
 }
