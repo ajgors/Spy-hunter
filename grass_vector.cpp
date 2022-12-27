@@ -56,3 +56,13 @@ grass_t grass_pop_back(grass_vector_t* v) {
     return retv;
 }
 
+void grass_add_to_front(grass_vector_t* v, grass_t val) {
+    if (v->count == v->allocated_size)
+        grass_reallocate(v, 2 * v->allocated_size);
+	for (int i = v->count; i > 0; i--) {
+		v->ptr[i] = v->ptr[i - 1];
+	}
+	v->ptr[0] = val;
+	v->count++;
+}
+

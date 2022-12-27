@@ -50,15 +50,13 @@ struct grass_t {
 
 struct game_t {
 	vector_t grass_que;
-	vector_t grass;
+	vector_t grass_c;
 	int grass_width_on_car_y = 0;
 	bool running = true;
 	bool pause = false;
 	bool save_screen = false;
 	double score = 0;
 	car_vector_t cars;
-
-	//vector<grass_t> grass_vector;
 
 	grass_vector_t grass_vector;
 };
@@ -110,10 +108,10 @@ void render_cars(SDL_Renderer* renderer, textures_t& textures, game_t& game) {
 void manage_cars_position(game_t& game, car_t& player_car) {
 
 	for (int i = 0; i < game.cars.count; i++) {
-		if (game.grass.ptr[0] > game.grass.ptr[1]) {
-			if (game.cars.ptr[i].x < game.grass.ptr[0]) game.cars.ptr[i].x += CAR_MOVE_PIXELS;
-			else if (game.cars.ptr[i].x + CAR_WIDTH / 2 > SCREEN_WIDTH - game.grass.ptr[0]) game.cars.ptr[i].x -= CAR_MOVE_PIXELS;
-			if (game.grass.ptr[0] == MIN_GRASS_WIDTH) game.cars.ptr[i].x -= CAR_MOVE_PIXELS;
+		if (game.grass_c.ptr[0] > game.grass_c.ptr[1]) {
+			if (game.cars.ptr[i].x < game.grass_c.ptr[0]) game.cars.ptr[i].x += CAR_MOVE_PIXELS;
+			else if (game.cars.ptr[i].x + CAR_WIDTH / 2 > SCREEN_WIDTH - game.grass_c.ptr[0]) game.cars.ptr[i].x -= CAR_MOVE_PIXELS;
+			if (game.grass_c.ptr[0] == MIN_GRASS_WIDTH) game.cars.ptr[i].x -= CAR_MOVE_PIXELS;
 		}
 
 		if (player_car.speed == game.cars.ptr[i].speed + 2) game.cars.ptr[i].y += 4;
@@ -148,7 +146,7 @@ int main(int argc, char* argv[])
 
 
 	init_vector(&game.grass_que);
-	init_vector(&game.grass);
+	init_vector(&game.grass_c);
 
 	SDL_Event event;
 	SDL_Window* window;
@@ -194,14 +192,9 @@ int main(int argc, char* argv[])
 
 			for (int i = 0; i < game.grass_vector.count; i++) {
 				game.grass_vector.ptr[i].y += 4 * player_car.speed;
-
-				/* if (game.grass_vector[i].y >= CAR_Y) {
-					cout << game.grass_vector[i].y << endl;
-				}*/
 			}
 
 			if (game.grass_vector.ptr[game.grass_vector.count - 1].y - GRASS_HEIGHT >= SCREEN_HEIGHT) {
-				//game.grass_vector.pop_back();
 				grass_pop_back(&game.grass_vector);
 			}
 
@@ -209,26 +202,9 @@ int main(int argc, char* argv[])
 				grass_t grass;
 				grass.y = game.grass_vector.ptr[game.grass_vector.count - 1].y + GRASS_HEIGHT - SCREEN_HEIGHT - GRASS_HEIGHT;
 
-				grass_vector_t tmp;
-				init_grass_vector(&tmp);
+				grass_add_to_front(&game.grass_vector, grass);
 				
-				grass_push_back(&tmp, grass);
-				
-				for (int i = 0; i < game.grass_vector.count; i++) {
-					grass_push_back(&tmp, game.grass_vector.ptr[i]);
-				}
-				
-				int s = game.grass_vector.count;
-				for (int i = 0; i < s; i++) {
-					grass_pop_back(&game.grass_vector);
-				}
-				
-				for (int i = 0; i < tmp.count; i++) {
-					grass_push_back(&game.grass_vector, tmp.ptr[i]);
-				}
-				free(tmp.ptr);
-				
-				add_from_que_to_road(game, player_car);
+				add_from_que_to_grass(game, player_car);
 			}
 
 			SDL_RenderPresent(renderer);
@@ -402,11 +378,11 @@ void load_save(game_t& game, gameTime_t& game_time, car_t& car, char file_name[]
 		cout << "b³¹d w otwarciu pliku";
 	}
 	else {
-		for (int i = 0; i < game.grass.count; i++) {
-			fread(&game.grass.ptr[i], sizeof(int), 1, file);
+		for (int i = 0; i < game.grass_c.count; i++) {
+			fread(&game.grass_c.ptr[i], sizeof(int), 1, file);
 		}
-		fread(&game.grass.count, sizeof(game.grass.count), 1, file);
-		fread(&game.grass.allocated_size, sizeof(game.grass.allocated_size), 1, file);
+		fread(&game.grass_c.count, sizeof(game.grass_c.count), 1, file);
+		fread(&game.grass_c.allocated_size, sizeof(game.grass_c.allocated_size), 1, file);
 
 		free(game.grass_que.ptr);
 		init_vector(&game.grass_que);
@@ -462,11 +438,11 @@ void save_game(game_t& game, gameTime_t& game_time, car_t& car) {
 		cout << "FAILED OPENING FILE" << endl;
 	}
 	else {
-		for (int i = 0; i < game.grass.count; i++) {
-			fwrite(&game.grass.ptr[i], sizeof(int), 1, file);
+		for (int i = 0; i < game.grass_c.count; i++) {
+			fwrite(&game.grass_c.ptr[i], sizeof(int), 1, file);
 		}
-		fwrite(&game.grass.count, sizeof(game.grass.count), 1, file);
-		fwrite(&game.grass.allocated_size, sizeof(game.grass.allocated_size), 1, file);
+		fwrite(&game.grass_c.count, sizeof(game.grass_c.count), 1, file);
+		fwrite(&game.grass_c.allocated_size, sizeof(game.grass_c.allocated_size), 1, file);
 
 
 		fwrite(&game.grass_que.count, sizeof(game.grass_que.count), 1, file);
@@ -504,13 +480,13 @@ void generate_random_car(textures_t textures, game_t* game) {
 		if (n == 1) {
 			car_t random_car;
 
-			int road_width = SCREEN_WIDTH - 2 * game->grass.ptr[0];
+			int road_width = SCREEN_WIDTH - 2 * game->grass_c.ptr[0];
 			int x = (rand() & road_width) + 1;
 			int left = x % CAR_MOVE_PIXELS;
 			x = x - left;
 			if (x > SCREEN_WIDTH / 2) x -= GRASS_WIDTH;
 
-			random_car.x = game->grass.ptr[0] + x;
+			random_car.x = game->grass_c.ptr[0] + x;
 			random_car.y = 0 - CAR_HEIGTH / 2;
 
 			car_push_back(&game->cars, random_car);
@@ -630,21 +606,21 @@ void render_grass(game_t& game, SDL_Renderer* renderer, SDL_Texture* roadTexture
 		SDL_Rect roadRect_left;
 		roadRect_left.x = 0;
 		roadRect_left.y = game.grass_vector.ptr[i].y;
-		roadRect_left.w = game.grass.ptr[i];
+		roadRect_left.w = game.grass_c.ptr[i];
 		roadRect_left.h = GRASS_HEIGHT;
 
 		SDL_Rect roadRect_right;
-		roadRect_right.x = SCREEN_WIDTH - game.grass.ptr[i];
+		roadRect_right.x = SCREEN_WIDTH - game.grass_c.ptr[i];
 		roadRect_right.y = game.grass_vector.ptr[i].y;
-		roadRect_right.w = game.grass.ptr[i];
+		roadRect_right.w = game.grass_c.ptr[i];
 		roadRect_right.h = GRASS_HEIGHT;
 
 		//saving grass width on car y position (used for car grass collision)
-		if (roadRect_right.y <= car.y + CAR_HEIGTH && roadRect_right.y >= car.y && game.grass.ptr[i] > 0) {
-			game.grass_width_on_car_y = game.grass.ptr[i];
+		if (roadRect_right.y <= car.y + CAR_HEIGTH && roadRect_right.y >= car.y && game.grass_c.ptr[i] > 0) {
+			game.grass_width_on_car_y = game.grass_c.ptr[i];
 		}
 
-		if (game.grass.ptr[i] == MIN_GRASS_WIDTH) {
+		if (game.grass_c.ptr[i] == MIN_GRASS_WIDTH) {
 			SDL_Rect roadRect_middle;
 			roadRect_middle.x = SCREEN_WIDTH / 2 - GRASS_WIDTH / 2;
 			roadRect_middle.y = game.grass_vector.ptr[i].y;
@@ -662,23 +638,23 @@ void render_grass(game_t& game, SDL_Renderer* renderer, SDL_Texture* roadTexture
 void generate_start_road(game_t& game)
 {
 	for (int i = 0; i < SCREEN_HEIGHT / GRASS_HEIGHT; ++i)
-		push_back(&game.grass, 6 * GRASS_WIDTH);
+		push_back(&game.grass_c, 6 * GRASS_WIDTH);
 }
 
 
-void add_from_que_to_road(game_t& game, car_t& car)
+void add_from_que_to_grass(game_t& game, car_t& car)
 {
 	if (car.speed > 0) {
 		vector_t grass_tmp;
 		init_vector(&grass_tmp);
 		int r = pop_back(&game.grass_que);
 		push_back(&grass_tmp, r);
-		for (int i = 0; i < game.grass.count - 1; ++i)
+		for (int i = 0; i < game.grass_c.count - 1; ++i)
 		{
-			push_back(&grass_tmp, game.grass.ptr[i]);
+			push_back(&grass_tmp, game.grass_c.ptr[i]);
 		}
-		free(game.grass.ptr);
-		game.grass.ptr = grass_tmp.ptr;
+		free(game.grass_c.ptr);
+		game.grass_c.ptr = grass_tmp.ptr;
 	}
 }
 
@@ -692,7 +668,7 @@ void generate_road_que(game_t& game)
 	if (game.grass_que.count == 0) {
 		int n = (rand() % 3) + 1;
 		if (n == 1) {
-			if (game.grass.ptr[0] == MAX_GRASS_WIDTH) {
+			if (game.grass_c.ptr[0] == MAX_GRASS_WIDTH) {
 				for (int i = 0; i < NUMBER_OF_GRASS_TXT; ++i)
 				{
 					push_back(&game.grass_que, MAX_GRASS_WIDTH);
@@ -701,15 +677,15 @@ void generate_road_que(game_t& game)
 			else {
 				for (int i = 0; i < NUMBER_OF_GRASS_TXT * 3; ++i)
 				{
-					if (i < NUMBER_OF_GRASS_TXT && game.grass.ptr[0] + 3 * GRASS_WIDTH <= MAX_GRASS_WIDTH) {
-						push_back(&game.grass_que, game.grass.ptr[0] + 3 * GRASS_WIDTH);
+					if (i < NUMBER_OF_GRASS_TXT && game.grass_c.ptr[0] + 3 * GRASS_WIDTH <= MAX_GRASS_WIDTH) {
+						push_back(&game.grass_que, game.grass_c.ptr[0] + 3 * GRASS_WIDTH);
 					}
-					else if (i >= NUMBER_OF_GRASS_TXT && i < 2 * NUMBER_OF_GRASS_TXT && game.grass.ptr[0] + 2 * GRASS_WIDTH <= MAX_GRASS_WIDTH) {
+					else if (i >= NUMBER_OF_GRASS_TXT && i < 2 * NUMBER_OF_GRASS_TXT && game.grass_c.ptr[0] + 2 * GRASS_WIDTH <= MAX_GRASS_WIDTH) {
 
-						push_back(&game.grass_que, game.grass.ptr[0] + 2 * GRASS_WIDTH);
+						push_back(&game.grass_que, game.grass_c.ptr[0] + 2 * GRASS_WIDTH);
 					}
-					else if (i >= 2 * NUMBER_OF_GRASS_TXT && i < NUMBER_OF_GRASS_TXT * 3 && game.grass.ptr[0] + 1 * GRASS_WIDTH <= MAX_GRASS_WIDTH) {
-						push_back(&game.grass_que, game.grass.ptr[0] + 1 * GRASS_WIDTH);
+					else if (i >= 2 * NUMBER_OF_GRASS_TXT && i < NUMBER_OF_GRASS_TXT * 3 && game.grass_c.ptr[0] + 1 * GRASS_WIDTH <= MAX_GRASS_WIDTH) {
+						push_back(&game.grass_que, game.grass_c.ptr[0] + 1 * GRASS_WIDTH);
 					}
 					else {
 						push_back(&game.grass_que, MAX_GRASS_WIDTH);
@@ -718,7 +694,7 @@ void generate_road_que(game_t& game)
 			}
 		}
 		else if (n == 2) {
-			if (game.grass.ptr[0] == MIN_GRASS_WIDTH) {
+			if (game.grass_c.ptr[0] == MIN_GRASS_WIDTH) {
 				for (int i = 0; i < NUMBER_OF_GRASS_TXT; ++i)
 				{
 					push_back(&game.grass_que, MIN_GRASS_WIDTH);
@@ -727,14 +703,14 @@ void generate_road_que(game_t& game)
 			else {
 				for (int i = 0; i < NUMBER_OF_GRASS_TXT * 3; ++i)
 				{
-					if (i < NUMBER_OF_GRASS_TXT && game.grass.ptr[0] - 3 * GRASS_WIDTH >= MIN_GRASS_WIDTH) {
-						push_back(&game.grass_que, game.grass.ptr[0] - 3 * GRASS_WIDTH);
+					if (i < NUMBER_OF_GRASS_TXT && game.grass_c.ptr[0] - 3 * GRASS_WIDTH >= MIN_GRASS_WIDTH) {
+						push_back(&game.grass_que, game.grass_c.ptr[0] - 3 * GRASS_WIDTH);
 					}
-					else if (i >= NUMBER_OF_GRASS_TXT && i < 2 * NUMBER_OF_GRASS_TXT && game.grass.ptr[0] - 2 * GRASS_WIDTH >= MIN_GRASS_WIDTH) {
-						push_back(&game.grass_que, game.grass.ptr[0] - 2 * GRASS_WIDTH);
+					else if (i >= NUMBER_OF_GRASS_TXT && i < 2 * NUMBER_OF_GRASS_TXT && game.grass_c.ptr[0] - 2 * GRASS_WIDTH >= MIN_GRASS_WIDTH) {
+						push_back(&game.grass_que, game.grass_c.ptr[0] - 2 * GRASS_WIDTH);
 					}
-					else if (i >= 2 * NUMBER_OF_GRASS_TXT && i < NUMBER_OF_GRASS_TXT * 3 && game.grass.ptr[0] - GRASS_WIDTH >= MIN_GRASS_WIDTH) {
-						push_back(&game.grass_que, game.grass.ptr[0] - 1 * GRASS_WIDTH);
+					else if (i >= 2 * NUMBER_OF_GRASS_TXT && i < NUMBER_OF_GRASS_TXT * 3 && game.grass_c.ptr[0] - GRASS_WIDTH >= MIN_GRASS_WIDTH) {
+						push_back(&game.grass_que, game.grass_c.ptr[0] - 1 * GRASS_WIDTH);
 					}
 					else {
 						push_back(&game.grass_que, MIN_GRASS_WIDTH);
@@ -745,7 +721,7 @@ void generate_road_que(game_t& game)
 		else {
 			for (int i = 0; i < NUMBER_OF_GRASS_TXT * 3; ++i)
 			{
-				push_back(&game.grass_que, game.grass.ptr[0]);
+				push_back(&game.grass_que, game.grass_c.ptr[0]);
 			}
 		}
 	}
@@ -854,9 +830,9 @@ void restart_game(game_t& game, gameTime_t& time, car_t& car) {
 	free(game.grass_que.ptr);
 	init_vector(&game.grass_que);
 	game.grass_que.count = 0;
-	free(game.grass.ptr);
-	init_vector(&game.grass);
-	game.grass.count = 0;
+	free(game.grass_c.ptr);
+	init_vector(&game.grass_c);
+	game.grass_c.count = 0;
 	generate_start_road(game);
 	game.score = 0;
 	time.world_time = 0;

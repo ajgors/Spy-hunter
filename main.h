@@ -44,7 +44,7 @@ void calculate_time(gameTime_t& time);
 void render_legend(SDL_Surface* screen, SDL_Surface* charset, gameTime_t& time, fps_t& game_fps, SDL_Renderer* renderer, SDL_Texture* scrtex, game_t game);
 void cap_fps(fps_t& game_fps, car_t& car);
 void generate_road_que(game_t& game);
-void add_from_que_to_road(game_t& game, car_t& car);
+void add_from_que_to_grass(game_t& game, car_t& car);
 void generate_start_road(game_t& game);
 void restart_game(game_t& game, gameTime_t& time, car_t& car);
 void render_grass(game_t& game, SDL_Renderer* renderer, SDL_Texture* roadTexture, car_t& car);
