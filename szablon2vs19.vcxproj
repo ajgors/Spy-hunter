@@ -20,6 +20,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="cars_vector.cpp" />
+    <ClCompile Include="grass_vector.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="vector.cpp" />
   </ItemGroup>
@@ -36,6 +37,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="cars_vector.h" />
+    <ClInclude Include="grass_vector.h" />
     <ClInclude Include="main.h" />
     <ClInclude Include="vector.h" />
   </ItemGroup>

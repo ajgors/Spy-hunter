@@ -16,6 +16,7 @@ extern "C" {
 #include <vector>
 #include "vector.h"
 #include "cars_vector.h"
+#include "grass_vector.h"
 #include <string>
 #include <iostream>
 #include <filesystem>

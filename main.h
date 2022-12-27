@@ -30,6 +30,7 @@ struct gameTime_t;
 struct fps_t;
 struct game_t;
 struct textures_t;
+struct grass_t;
 
 
 void free_textures(textures_t& textures);
