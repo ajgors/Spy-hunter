@@ -58,7 +58,9 @@ struct game_t {
 	double score = 0;
 	car_vector_t cars;
 
-	vector<grass_t> grass_vector;
+	//vector<grass_t> grass_vector;
+
+	grass_vector_t grass_vector;
 };
 
 struct textures_t {
@@ -113,7 +115,7 @@ void manage_cars_position(game_t& game, car_t& player_car) {
 			else if (game.cars.ptr[i].x + CAR_WIDTH / 2 > SCREEN_WIDTH - game.grass.ptr[0]) game.cars.ptr[i].x -= CAR_MOVE_PIXELS;
 			if (game.grass.ptr[0] == MIN_GRASS_WIDTH) game.cars.ptr[i].x -= CAR_MOVE_PIXELS;
 		}
-		
+
 		if (player_car.speed == game.cars.ptr[i].speed + 2) game.cars.ptr[i].y += 4;
 		if (player_car.speed == game.cars.ptr[i].speed + 1) game.cars.ptr[i].y += 2;
 		if (player_car.speed == game.cars.ptr[i].speed - 1) game.cars.ptr[i].y -= 4;
@@ -142,6 +144,9 @@ int main(int argc, char* argv[])
 
 	game_t game;
 	init_car_vector(&game.cars);
+	init_grass_vector(&game.grass_vector);
+
+
 	init_vector(&game.grass_que);
 	init_vector(&game.grass);
 
@@ -187,22 +192,42 @@ int main(int argc, char* argv[])
 
 
 
-			for (int i = 0; i < game.grass_vector.size(); i++) {
-				game.grass_vector[i].y += 4 * player_car.speed;
+			for (int i = 0; i < game.grass_vector.count; i++) {
+				game.grass_vector.ptr[i].y += 4 * player_car.speed;
 
 				/* if (game.grass_vector[i].y >= CAR_Y) {
 					cout << game.grass_vector[i].y << endl;
 				}*/
 			}
 
-			if (game.grass_vector[game.grass_vector.size() - 1].y - GRASS_HEIGHT >= SCREEN_HEIGHT) {
-				game.grass_vector.pop_back();
+			if (game.grass_vector.ptr[game.grass_vector.count - 1].y - GRASS_HEIGHT >= SCREEN_HEIGHT) {
+				//game.grass_vector.pop_back();
+				grass_pop_back(&game.grass_vector);
 			}
 
-			if (game.grass_vector[game.grass_vector.size() - 1].y + GRASS_HEIGHT > SCREEN_HEIGHT && game.grass_vector.size() < NUMBER_OF_GRASS_TXT + 1) {
+			if (game.grass_vector.ptr[game.grass_vector.count - 1].y + GRASS_HEIGHT > SCREEN_HEIGHT && game.grass_vector.count < NUMBER_OF_GRASS_TXT + 1) {
 				grass_t grass;
-				grass.y = game.grass_vector[game.grass_vector.size() - 1].y + GRASS_HEIGHT - SCREEN_HEIGHT - GRASS_HEIGHT;
-				game.grass_vector.insert(game.grass_vector.begin(), grass);
+				grass.y = game.grass_vector.ptr[game.grass_vector.count - 1].y + GRASS_HEIGHT - SCREEN_HEIGHT - GRASS_HEIGHT;
+
+				grass_vector_t tmp;
+				init_grass_vector(&tmp);
+				
+				grass_push_back(&tmp, grass);
+				
+				for (int i = 0; i < game.grass_vector.count; i++) {
+					grass_push_back(&tmp, game.grass_vector.ptr[i]);
+				}
+				
+				int s = game.grass_vector.count;
+				for (int i = 0; i < s; i++) {
+					grass_pop_back(&game.grass_vector);
+				}
+				
+				for (int i = 0; i < tmp.count; i++) {
+					grass_push_back(&game.grass_vector, tmp.ptr[i]);
+				}
+				free(tmp.ptr);
+				
 				add_from_que_to_road(game, player_car);
 			}
 
@@ -590,27 +615,27 @@ void render_implemented(SDL_Surface* screen, SDL_Surface* charset, SDL_Texture* 
 
 void render_grass(game_t& game, SDL_Renderer* renderer, SDL_Texture* roadTexture, car_t& car)
 {
-	if (game.grass_vector.size() == 0) {
+	if (game.grass_vector.count == 0) {
 		for (int i = 0; i < NUMBER_OF_GRASS_TXT; i++) {
 
 			grass_t grass;
 			grass.y = GRASS_HEIGHT * i;
 
-			game.grass_vector.push_back(grass);
+			grass_push_back(&game.grass_vector, grass);
 		}
 	}
 
-	for (int i = 0; i < game.grass_vector.size(); ++i)
+	for (int i = 0; i < game.grass_vector.count; ++i)
 	{
 		SDL_Rect roadRect_left;
 		roadRect_left.x = 0;
-		roadRect_left.y = game.grass_vector[i].y;
+		roadRect_left.y = game.grass_vector.ptr[i].y;
 		roadRect_left.w = game.grass.ptr[i];
 		roadRect_left.h = GRASS_HEIGHT;
 
 		SDL_Rect roadRect_right;
 		roadRect_right.x = SCREEN_WIDTH - game.grass.ptr[i];
-		roadRect_right.y = game.grass_vector[i].y;
+		roadRect_right.y = game.grass_vector.ptr[i].y;
 		roadRect_right.w = game.grass.ptr[i];
 		roadRect_right.h = GRASS_HEIGHT;
 
@@ -622,7 +647,7 @@ void render_grass(game_t& game, SDL_Renderer* renderer, SDL_Texture* roadTexture
 		if (game.grass.ptr[i] == MIN_GRASS_WIDTH) {
 			SDL_Rect roadRect_middle;
 			roadRect_middle.x = SCREEN_WIDTH / 2 - GRASS_WIDTH / 2;
-			roadRect_middle.y = game.grass_vector[i].y;
+			roadRect_middle.y = game.grass_vector.ptr[i].y;
 			roadRect_middle.w = MIN_GRASS_WIDTH;
 			roadRect_middle.h = GRASS_HEIGHT;
 			SDL_RenderCopy(renderer, roadTexture, nullptr, &roadRect_middle);
