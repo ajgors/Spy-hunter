@@ -59,3 +59,4 @@ void DrawString(SDL_Surface* screen, int x, int y, const char* text, SDL_Surface
 //void generate_random_car(textures_t textures, game_t& game);
 //void free_textures(textures_t& textures);
 void generate_random_car(textures_t textures, game_t* game);
+void icrease_score(game_t& game, car_t& car);
