@@ -6,7 +6,7 @@ using namespace std;
 
 #define SCREEN_WIDTH 650
 #define SCREEN_HEIGHT 480
-#define FPS 30
+#define FPS 60
 #define LEGEND_HEIGHT 50
 #define GRASS_HEIGHT 32
 #define GRASS_WIDTH 25
