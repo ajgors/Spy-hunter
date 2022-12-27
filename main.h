@@ -52,12 +52,14 @@ void render_implemented(SDL_Surface* screen, SDL_Surface* charset, SDL_Texture* 
 void stop_game(car_t& car, gameTime_t& time, game_t& game);
 void render_random_car(car_t& car, SDL_Renderer* renderer, SDL_Texture* carTexture);
 SDL_Texture* load_texture(char s[], SDL_Renderer* renderer);
-//void generate_random_car(vector<car_t>& cars, textures_t textures, game_t& game);
 void load_saves(char saves[10][128]);
 void load_save_screen(SDL_Surface* screen, SDL_Surface* charset, SDL_Texture* scrtex, SDL_Renderer* renderer, SDL_Event& event, char saves[10][128]);
 void load_save(game_t& game, gameTime_t& game_time, car_t& car, char file_name[]);
 void DrawString(SDL_Surface* screen, int x, int y, const char* text, SDL_Surface* charset);
-//void generate_random_car(textures_t textures, game_t& game);
-//void free_textures(textures_t& textures);
 void generate_random_car(textures_t textures, game_t* game);
 void icrease_score(game_t& game, car_t& car);
+void scroll_grass(game_t& game, car_t& player_car);
+void clear_cars_outside_screen(game_t& game);
+void update_cars_speed(game_t& game);
+void render_cars(SDL_Renderer* renderer, textures_t& textures, game_t& game);
+void manage_cars_position(game_t& game, car_t& player_car);
