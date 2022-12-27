@@ -47,21 +47,37 @@ struct grass_t {
 	int width = 0;
 };
 
+struct bullet_t {
+	int y = CAR_Y;
+	int x = CAR_X;
+};
+
 struct game_t {
 	vector_t grass_que = { 0 };
+	car_vector_t cars = { 0 };
+	grass_vector_t grass_vector = { 0 };
+	vector<bullet_t> bullets;
 	int grass_width_on_car_y = 0;
 	bool running = true;
 	bool pause = false;
 	bool save_screen = false;
 	double score = 0;
-	car_vector_t cars = { 0 };
-	grass_vector_t grass_vector = { 0 };
 };
 
 struct textures_t {
 	SDL_Texture* red_car = NULL;
 	SDL_Texture* grass = NULL;
 	SDL_Texture* blue_car = NULL;
+	SDL_Texture* bullet = NULL;
+};
+
+
+void render_bullet(SDL_Renderer* renderer, game_t& game, SDL_Texture* bullet_texture) {
+
+	for (int i = 0; i < game.bullets.size(); i++) {
+		SDL_Rect bullet_rect = { game.bullets[i].x, game.bullets[i].y, 1, 10 };
+		SDL_RenderCopy(renderer, bullet_texture, NULL, &bullet_rect);
+	}
 };
 
 
@@ -77,6 +93,7 @@ int main(int argc, char* argv[]) {
 	car_t player_car;
 	fps_t game_fps;
 	game_t game;
+	bullet_t bullet;
 	init_car_vector(&game.cars);
 	init_grass_vector(&game.grass_vector);
 	init_vector(&game.grass_que);
@@ -86,6 +103,7 @@ int main(int argc, char* argv[]) {
 		textures.red_car = load_texture("car_red.bmp", renderer);
 		textures.grass = load_texture("grass.bmp", renderer);
 		textures.blue_car = load_texture("car_blue.bmp", renderer);
+		textures.bullet = load_texture("bullet.bmp", renderer);
 		if (charset == NULL || textures.grass == NULL || textures.red_car == NULL || textures.blue_car == NULL) {
 			free_textures(textures);;
 			free_memory(screen, scrtex, renderer, window);
@@ -114,7 +132,16 @@ int main(int argc, char* argv[]) {
 			icrease_score(game, player_car);
 			render_legend(screen, charset, time, game_fps, renderer, scrtex, game);
 			scroll_grass(game, player_car);
+			render_bullet(renderer, game, textures.bullet);
+
+			for (int i = 0; i < game.bullets.size(); i++) {
+				game.bullets[i].y -= 4;
+			}
+
+
+			cout << game.bullets.size() << endl;
 			SDL_RenderPresent(renderer);
+
 		}
 		else if (game.save_screen) {
 			char saves[10][128] = { 0 };
@@ -217,6 +244,15 @@ void manage_cars_position(game_t& game, car_t& player_car) {
 			if (game.cars.ptr[i].y - CAR_HEIGTH < game.cars.ptr[k].y && game.cars.ptr[i].y > game.cars.ptr[k].y && game.cars.ptr[i].x + CAR_WIDTH >= game.cars.ptr[k].x && game.cars.ptr[i].x <= game.cars.ptr[k].x + CAR_WIDTH) {
 				game.cars.ptr[i].y += 30;
 				game.cars.ptr[i].speed = 0;
+			}
+		}
+
+		//Check if bullet hit car (when hit removed from map)
+		for (int k = 0; k < game.bullets.size(); k++) {
+			if (game.bullets[k].y - CAR_HEIGTH < game.cars.ptr[i].y && game.bullets[k].y > game.cars.ptr[i].y && game.bullets[k].x + CAR_WIDTH >= game.cars.ptr[i].x && game.bullets[k].x <= game.cars.ptr[i].x + CAR_WIDTH) {
+				car_vector_delete(&game.cars, i);
+				game.bullets[k].x = +1000;
+				game.bullets.erase(game.bullets.begin() + k);
 			}
 		}
 	}
@@ -722,6 +758,12 @@ void calculate_time(gameTime_t& time) {
 }
 
 
+void fire_bullet(game_t& game, car_t& player_car) {
+	bullet_t bullet;
+	bullet.x = player_car.x + CAR_WIDTH / 2;
+	game.bullets.push_back(bullet);
+}
+
 // Obs³uga zdarzeñ
 void events_handling(SDL_Event& event, car_t& car, game_t& game, gameTime_t& time) {
 	while (SDL_PollEvent(&event))
@@ -758,6 +800,7 @@ void events_handling(SDL_Event& event, car_t& car, game_t& game, gameTime_t& tim
 			else if (event.key.keysym.sym == SDLK_p) stop_game(car, time, game);
 			else if (event.key.keysym.sym == SDLK_s) save_game(game, time, car);
 			else if (event.key.keysym.sym == SDLK_l) game.save_screen = true;
+			else if (event.key.keysym.sym == SDLK_SPACE) fire_bullet(game, car);
 			break;
 		case SDL_QUIT:
 			game.running = false;

@@ -58,3 +58,20 @@ car_t car_pop_back(car_vector_t* v) {
     return retv;
 }
 
+void car_vector_delete(car_vector_t* v, int index)
+{
+    if (index < 0 || index >= v->count)
+        return;
+
+    v->ptr[index] = {0};
+
+    for (int i = index; i < v->count - 1; i++) {
+        v->ptr[i] = v->ptr[i + 1];
+        v->ptr[i + 1] = {0};
+    }
+
+    v->count--;
+
+    if (v->count > 0 && v->count == v->allocated_size / 4)
+        car_reallocate(v, v->allocated_size / 2);
+}
