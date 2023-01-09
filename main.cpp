@@ -130,9 +130,9 @@ int main(int argc, char* argv[]) {
 			render_cars(renderer, textures, game);
 			manage_cars_position(game, player_car);
 			icrease_score(game, player_car);
+			render_bullet(renderer, game, textures.bullet);
 			render_legend(screen, charset, time, game_fps, renderer, scrtex, game);
 			scroll_grass(game, player_car);
-			render_bullet(renderer, game, textures.bullet);
 
 			for (int i = 0; i < game.bullets.size(); i++) {
 				game.bullets[i].y -= 4;
