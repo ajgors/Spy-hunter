@@ -26,6 +26,8 @@ using namespace std;
 #define START_LIVES 3
 #define FIRE_WIDTH 100
 #define FIRE_HEIGTH 100
+#define HEART_WIDTH 20
+#define HEART_HEIGTH 20
 
 
 struct car_t;
@@ -37,8 +39,11 @@ struct grass_t;
 struct bullet_t;
 
 
+
+void pick_up_heart(game_t& game, car_t& player_car);
+void generate_random_live(game_t& game, gameTime_t& time);
 void free_textures(textures_t& textures);
-void check_for_colision(car_t& car, game_t& game);
+void check_for_colision(car_t& car, game_t& game, gameTime_t& time);
 int init(SDL_Window*& window, SDL_Renderer*& renderer, SDL_Surface*& screen, SDL_Texture*& scrtex);
 void free_memory(SDL_Surface* screen, SDL_Texture* scrtex, SDL_Renderer* renderer, SDL_Window* window);
 void load_charset(SDL_Surface*& charset);
