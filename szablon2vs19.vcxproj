@@ -28,6 +28,7 @@
   <ItemGroup>
     <Image Include="..\..\..\bullet.bmp" />
     <Image Include="..\..\..\car_red.bmp" />
+    <Image Include="..\..\..\fire.bmp" />
     <Image Include="..\..\..\grass2.bmp" />
     <Image Include="car_blue.bmp" />
     <Image Include="road.bmp" />
