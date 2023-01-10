@@ -31,6 +31,7 @@ struct fps_t;
 struct game_t;
 struct textures_t;
 struct grass_t;
+struct bullet_t;
 
 
 void free_textures(textures_t& textures);

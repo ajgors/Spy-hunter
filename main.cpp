@@ -17,6 +17,7 @@ extern "C" {
 #include "vector.h"
 #include "cars_vector.h"
 #include "grass_vector.h"
+#include "bullet_vector.h"
 #include <string>
 #include <iostream>
 #include <filesystem>
@@ -56,12 +57,13 @@ struct game_t {
 	vector_t grass_que = { 0 };
 	car_vector_t cars = { 0 };
 	grass_vector_t grass_vector = { 0 };
-	vector<bullet_t> bullets;
+	bullet_vector_t bullet_vector = { 0 };
 	int grass_width_on_car_y = 0;
 	bool running = true;
 	bool pause = false;
 	bool save_screen = false;
 	double score = 0;
+	int traveled_distance = 0;
 };
 
 struct textures_t {
@@ -74,12 +76,14 @@ struct textures_t {
 
 void render_bullet(SDL_Renderer* renderer, game_t& game, SDL_Texture* bullet_texture) {
 
-	for (int i = 0; i < game.bullets.size(); i++) {
-		SDL_Rect bullet_rect = { game.bullets[i].x, game.bullets[i].y, 1, 10 };
+	for (int i = 0; i < game.bullet_vector.count; i++) {
+		SDL_Rect bullet_rect = { game.bullet_vector.ptr[i].x, game.bullet_vector.ptr[i].y, 1, 10 };
 		SDL_RenderCopy(renderer, bullet_texture, NULL, &bullet_rect);
 	}
 };
 
+
+void move_bullet(game_t& game);
 
 int main(int argc, char* argv[]) {
 	srand(time(nullptr));
@@ -97,6 +101,7 @@ int main(int argc, char* argv[]) {
 	init_car_vector(&game.cars);
 	init_grass_vector(&game.grass_vector);
 	init_vector(&game.grass_que);
+	init_bullet_vector(&game.bullet_vector);
 
 	if (init(window, renderer, screen, scrtex)) {
 		load_charset(charset);
@@ -134,12 +139,10 @@ int main(int argc, char* argv[]) {
 			render_legend(screen, charset, time, game_fps, renderer, scrtex, game);
 			scroll_grass(game, player_car);
 
-			for (int i = 0; i < game.bullets.size(); i++) {
-				game.bullets[i].y -= 4;
-			}
+			move_bullet(game);
 
 
-			cout << game.bullets.size() << endl;
+			cout << game.bullet_vector.count << endl;
 			SDL_RenderPresent(renderer);
 
 		}
@@ -180,6 +183,22 @@ int main(int argc, char* argv[]) {
 }
 
 
+//moves fired bullet 
+void move_bullet(game_t& game)
+{
+	
+	for (int i = 0; i < game.bullet_vector.count; i++) {
+		game.bullet_vector.ptr[i].y -= 4;
+		
+		//remove bullet if it is out of screen
+		if (game.bullet_vector.ptr[i].y < 0)
+		{
+			bullet_vector_delete(&game.bullet_vector, i);
+		}
+	}
+}
+
+//remove car if it is out of screen
 void clear_cars_outside_screen(game_t& game) {
 	car_vector_t tmp_cars;
 	init_car_vector(&tmp_cars);
@@ -199,7 +218,7 @@ void clear_cars_outside_screen(game_t& game) {
 	game.cars = tmp_cars;
 }
 
-
+//change speed of cars randomly
 void update_cars_speed(game_t& game) {
 	for (int i = 0; i < game.cars.count; i++) {
 		int n = (rand() % 100) + 1;
@@ -209,7 +228,7 @@ void update_cars_speed(game_t& game) {
 	}
 }
 
-
+//render cars on screens
 void render_cars(SDL_Renderer* renderer, textures_t& textures, game_t& game) {
 	for (int i = 0; i < game.cars.count; i++) {
 		render_car(game.cars.ptr[i], renderer, textures.blue_car);
@@ -248,11 +267,10 @@ void manage_cars_position(game_t& game, car_t& player_car) {
 		}
 
 		//Check if bullet hit car (when hit removed from map)
-		for (int k = 0; k < game.bullets.size(); k++) {
-			if (game.bullets[k].y - CAR_HEIGTH < game.cars.ptr[i].y && game.bullets[k].y > game.cars.ptr[i].y && game.bullets[k].x + CAR_WIDTH >= game.cars.ptr[i].x && game.bullets[k].x <= game.cars.ptr[i].x + CAR_WIDTH) {
+		for (int k = 0; k < game.bullet_vector.count; k++) {
+			if (game.bullet_vector.ptr[k].y - CAR_HEIGTH < game.cars.ptr[i].y && game.bullet_vector.ptr[k].y > game.cars.ptr[i].y && game.bullet_vector.ptr[k].x + CAR_WIDTH >= game.cars.ptr[i].x && game.bullet_vector.ptr[k].x <= game.cars.ptr[i].x + CAR_WIDTH) {
 				car_vector_delete(&game.cars, i);
-				game.bullets[k].x = +1000;
-				game.bullets.erase(game.bullets.begin() + k);
+				bullet_vector_delete(&game.bullet_vector, k);
 			}
 		}
 	}
@@ -261,8 +279,11 @@ void manage_cars_position(game_t& game, car_t& player_car) {
 
 void scroll_grass(game_t& game, car_t& player_car) {
 	for (int i = 0; i < game.grass_vector.count; i++) {
-		game.grass_vector.ptr[i].y += 4 * player_car.speed;
+		game.grass_vector.ptr[i].y +=   player_car.speed;
 	}
+	
+	//update traveled distance
+	game.traveled_distance +=  player_car.speed;
 
 	if (game.grass_vector.ptr[game.grass_vector.count - 1].y - GRASS_HEIGHT >= SCREEN_HEIGHT) {
 		grass_pop_back(&game.grass_vector);
@@ -279,7 +300,8 @@ void scroll_grass(game_t& game, car_t& player_car) {
 
 
 void icrease_score(game_t& game, car_t& car) {
-	game.score += 1 * car.speed;
+	if (game.traveled_distance % SCREEN_HEIGHT == 0) game.score += 50;
+	cout << game.traveled_distance << endl;
 }
 
 
@@ -761,7 +783,7 @@ void calculate_time(gameTime_t& time) {
 void fire_bullet(game_t& game, car_t& player_car) {
 	bullet_t bullet;
 	bullet.x = player_car.x + CAR_WIDTH / 2;
-	game.bullets.push_back(bullet);
+	bullet_push_back(&game.bullet_vector, bullet);
 }
 
 // Obs³uga zdarzeñ
