@@ -23,6 +23,9 @@ using namespace std;
 #define MIN_GRASS_WIDTH GRASS_WIDTH
 #define NUMBER_OF_GRASS_TXT (SCREEN_HEIGHT / GRASS_HEIGHT)
 #define CARS_NUMBER 10
+#define START_LIVES 3
+#define FIRE_WIDTH 100
+#define FIRE_HEIGTH 100
 
 
 struct car_t;
