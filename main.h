@@ -69,4 +69,4 @@ void scroll_grass(game_t& game, car_t& player_car);
 void clear_cars_outside_screen(game_t& game);
 void update_cars_speed(game_t& game);
 void render_cars(SDL_Renderer* renderer, textures_t& textures, game_t& game, car_t& player_car);
-void manage_cars_position(game_t& game, car_t& player_car);
+void manage_cars_position(game_t& game, car_t& player_car, gameTime_t& time);

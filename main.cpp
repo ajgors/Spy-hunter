@@ -173,7 +173,7 @@ int main(int argc, char* argv[]) {
 			clear_cars_outside_screen(game);
 			update_cars_speed(game);
 			render_cars(renderer, textures, game, player_car);
-			manage_cars_position(game, player_car);
+			manage_cars_position(game, player_car, time);
 			icrease_score(game, player_car);
 			render_bullet(renderer, game, textures.bullet);
 			render_legend(screen, charset, time, game_fps, renderer, scrtex, game);
@@ -235,7 +235,7 @@ void move_bullet(game_t& game)
 {
 
 	for (int i = 0; i < game.bullet_vector.count; i++) {
-		game.bullet_vector.ptr[i].y -= 4;
+		game.bullet_vector.ptr[i].y -= 7;
 
 		//remove bullet if it is out of screen
 		if (game.bullet_vector.ptr[i].y < 0)
@@ -287,7 +287,7 @@ void render_cars(SDL_Renderer* renderer, textures_t& textures, game_t& game, car
 }
 
 
-void manage_cars_position(game_t& game, car_t& player_car) {
+void manage_cars_position(game_t& game, car_t& player_car, gameTime_t &time) {
 
 	for (int i = 0; i < game.cars.count; i++) {
 
@@ -306,7 +306,13 @@ void manage_cars_position(game_t& game, car_t& player_car) {
 		if (player_car.speed == game.cars.ptr[i].speed - 3) game.cars.ptr[i].y -= 10;
 
 		//player bumping to cars
-		if (player_car.y - CAR_HEIGTH < game.cars.ptr[i].y && player_car.y > game.cars.ptr[i].y && player_car.x + CAR_WIDTH >= game.cars.ptr[i].x && player_car.x <= game.cars.ptr[i].x + CAR_WIDTH) player_car.speed = 0;
+		if (player_car.y - CAR_HEIGTH < game.cars.ptr[i].y && player_car.y > game.cars.ptr[i].y && player_car.x + CAR_WIDTH >= game.cars.ptr[i].x && player_car.x <= game.cars.ptr[i].x + CAR_WIDTH) {
+			player_car.in_grass = true;
+			game.fire.x = player_car.x - FIRE_WIDTH / 2;
+			game.fire.y = player_car.y;
+			player_car.time = SDL_GetTicks();
+			if (time.world_time >= 60) game.lives -= 1;
+		}
 
 		//other cars bumping to each other
 		for (int k = 0; k < game.cars.count; k++) {
@@ -629,7 +635,8 @@ void generate_random_car(textures_t textures, game_t* game) {
 			car_t random_car;
 
 			int x = generate_random_x_on_road(game);
-
+			cout << "x: " << x << endl;
+			cout << "cars: " << game->cars.count << endl;
 			random_car.x = game->grass_vector.ptr[0].width + x;
 			random_car.y = 0 - CAR_HEIGTH / 2;
 
