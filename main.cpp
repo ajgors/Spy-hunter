@@ -25,7 +25,7 @@ using namespace std;
 struct car_t {
 	int x = CAR_X;
 	int y = CAR_Y;
-	int speed = 2;
+	int speed = START_SPEED;
 	bool in_grass = false;
 	int time = 0;
 };
@@ -124,7 +124,7 @@ int main(int argc, char* argv[]) {
 		textures.heart = load_texture("heart.bmp", renderer);
 		if (charset == NULL || textures.grass == NULL || textures.red_car == NULL || textures.blue_car == NULL
 			|| textures.bullet == NULL || textures.fire == NULL || textures.heart == NULL) {
-			free_textures(textures);;
+			free_textures(textures);
 			free_memory(screen, scrtex, renderer, window);
 			SDL_Quit();
 		}
@@ -153,14 +153,13 @@ int main(int argc, char* argv[]) {
 			generate_road_que(game);
 			calculate_time(time);
 			generate_random_car(textures, &game);
-			generate_random_live(game, time);
+			generate_random_heart(game, time);
 			pick_up_heart(game, player_car);
 			render_grass(game, renderer, textures.grass, player_car);
 			render_implemented(screen, charset, scrtex, renderer);
-			check_for_colision(player_car, game, time);
+			check_for_grass_colision(player_car, game, time);
 			render_fire(renderer, game, textures.fire);
-			render_heart(renderer, game, textures.heart);
-			clear_cars_outside_screen(game);
+			render_heart(renderer, game, textures.heart, player_car);
 			update_cars_speed(game);
 			render_cars(renderer, textures, game, player_car);
 			manage_cars_position(game, player_car, time);
@@ -168,7 +167,6 @@ int main(int argc, char* argv[]) {
 			render_bullet(renderer, game, textures.bullet);
 			render_legend(screen, charset, time, game_fps, renderer, scrtex, game, colors);
 			scroll_grass(game, player_car);
-			move_bullet(game);
 			SDL_RenderPresent(renderer);
 		}
 
@@ -185,48 +183,38 @@ int main(int argc, char* argv[]) {
 
 
 //moves fired bullet 
-void move_bullet(game_t& game)
-{
+void move_bullets(game_t& game){
+	
 	for (int i = 0; i < game.bullets.count; i++) {
-		game.bullets.ptr[i].y -= 7;
+		game.bullets.ptr[i].y -= BULLET_SPEED;
 
 		//remove bullet if it is out of screen
-		if (game.bullets.ptr[i].y < 0)
-		{
-			bullet_vector_delete(&game.bullets, i);
-		}
+		if (game.bullets.ptr[i].y < 0) bullet_vector_delete(&game.bullets, i);
 	}
 }
 
 
 //remove car if it is out of screen
-void clear_cars_outside_screen(game_t& game) {
-	car_vector_t tmp_cars;
-	init_car_vector(&tmp_cars);
-
+void remove_cars_outside_screen(game_t& game) {
+	
 	for (int i = 0; i < game.cars.count; i++) {
-		if (game.cars.ptr[i].y > SCREEN_HEIGHT) continue;
-		if (game.cars.ptr[i].y < -CAR_HEIGTH) continue;
-		if (game.cars.ptr[i].y - CAR_HEIGTH < SCREEN_HEIGHT) {
-			car_push_back(&tmp_cars, game.cars.ptr[i]);
+		if (game.cars.ptr[i].y > SCREEN_HEIGHT + CAR_HEIGTH) {
+			car_vector_delete(&game.cars, i);
 		}
-		else if (game.cars.ptr[i].y + CAR_HEIGTH > LEGEND_HEIGHT) {
-			car_push_back(&tmp_cars, game.cars.ptr[i]);
+		else if (game.cars.ptr[i].y + LEGEND_HEIGHT + CAR_HEIGTH < 0) {
+			car_vector_delete(&game.cars, i);
 		}
 	}
-	free(game.cars.ptr);
-	init_car_vector(&game.cars);
-	game.cars = tmp_cars;
 }
 
 
 //change speed of cars randomly
 void update_cars_speed(game_t& game) {
 	for (int i = 0; i < game.cars.count; i++) {
-		int n = (rand() % 100) + 1;
+		int n = (rand() % 1000) + 1;
 
-		if (n == 1 && game.cars.ptr[i].speed + 1 < 4) game.cars.ptr[i].speed += 1;
-		if (n == 100 && game.cars.ptr[i].speed - 1 > 0) game.cars.ptr[i].speed -= 1;
+		if (n == 1 && game.cars.ptr[i].speed + SPEED_INCREMENT < MAX_SPEED) game.cars.ptr[i].speed += SPEED_INCREMENT;
+		if (n == 1000 && game.cars.ptr[i].speed - SPEED_INCREMENT > 0) game.cars.ptr[i].speed -= SPEED_INCREMENT;
 	}
 }
 
@@ -252,11 +240,7 @@ void manage_cars_position(game_t& game, car_t& player_car, gameTime_t& time) {
 		}
 
 		//cars speed acroding to player speed
-		if (player_car.speed == game.cars.ptr[i].speed + 2) game.cars.ptr[i].y += 4;
-		if (player_car.speed == game.cars.ptr[i].speed + 1) game.cars.ptr[i].y += 2;
-		if (player_car.speed == game.cars.ptr[i].speed - 1) game.cars.ptr[i].y -= 4;
-		if (player_car.speed == game.cars.ptr[i].speed - 2) game.cars.ptr[i].y -= 6;
-		if (player_car.speed == game.cars.ptr[i].speed - 3) game.cars.ptr[i].y -= 10;
+		game.cars.ptr[i].y += player_car.speed - game.cars.ptr[i].speed;
 
 		//player bumping to cars
 		if (player_car.y - CAR_HEIGTH < game.cars.ptr[i].y && player_car.y > game.cars.ptr[i].y && player_car.x + CAR_WIDTH >= game.cars.ptr[i].x && player_car.x <= game.cars.ptr[i].x + CAR_WIDTH) {
@@ -264,7 +248,7 @@ void manage_cars_position(game_t& game, car_t& player_car, gameTime_t& time) {
 			game.fire.x = player_car.x - FIRE_WIDTH / 2;
 			game.fire.y = player_car.y;
 			player_car.time = SDL_GetTicks();
-			if (time.world_time >= 60) game.lives -= 1;
+			if (time.world_time >= INF_LIVES_TIME) game.lives -= 1;
 		}
 
 		//other cars bumping to each other
@@ -283,17 +267,19 @@ void manage_cars_position(game_t& game, car_t& player_car, gameTime_t& time) {
 				bullet_vector_delete(&game.bullets, k);
 			}
 		}
+		
+		remove_cars_outside_screen(game);
 	}
 }
 
 
 void scroll_grass(game_t& game, car_t& player_car) {
 	for (int i = 0; i < game.grass.count; i++) {
-		game.grass.ptr[i].y += 4 * player_car.speed;
+		game.grass.ptr[i].y += player_car.speed;
 	}
 
 	//update traveled distance
-	game.traveled_distance += 4 * player_car.speed;
+	game.traveled_distance += player_car.speed;
 
 	if (game.grass.ptr[game.grass.count - 1].y - GRASS_HEIGHT >= SCREEN_HEIGHT) {
 		grass_pop_back(&game.grass);
@@ -418,16 +404,16 @@ void show_saves_screen(SDL_Surface* screen, SDL_Surface* charset, SDL_Texture* s
 	char text[128];
 	int niebieski = SDL_MapRGB(screen->format, 0x11, 0x11, 0xCC);
 	sprintf(text, "Load game");
-	DrawString(screen, screen->w / 2 - strlen(text) * 8 / 2, 40, text, charset);
+	DrawString(screen, TEXT_CENTER, 40, text, charset);
 	sprintf(text, " press number to load save");
-	DrawString(screen, screen->w / 2 - strlen(text) * 8 / 2, 60, text, charset);
+	DrawString(screen, TEXT_CENTER, 60, text, charset);
 
 	for (int i = 0; i < 10; i++) {
 		if (saves[i][0] == '\0') break;
 		_itoa(i + 1, text, 10);
 		strcat_s(text, ") ");
 		strcat_s(text, saves[i]);
-		DrawString(screen, screen->w / 2 - strlen(text) * 8 / 2, 70 + (20 * (i + 1)), text, charset);
+		DrawString(screen, TEXT_CENTER, 70 + (20 * (i + 1)), text, charset);
 	}
 
 	SDL_UpdateTexture(scrtex, NULL, screen->pixels, screen->pitch);
@@ -598,20 +584,14 @@ void generate_random_car(textures_t textures, game_t* game) {
 }
 
 
-void generate_random_live(game_t& game, gameTime_t& time) {
-	if (time.world_time <= 60 && game.heart.y == -1) {
+void generate_random_heart(game_t& game, gameTime_t& time) {
+	if (time.world_time <= INF_LIVES_TIME && game.heart.y == -1) {
 		int n = (rand() % 1000) + 1;
 		if (n == 1) {
 			int x = generate_random_x_on_road(&game);
 			game.heart.x = game.grass.ptr[0].width + x;
 			game.heart.y = 0;
 		}
-	}
-	if (game.heart.y >= 0) {
-		game.heart.y += 4;
-	}
-	if (game.heart.y >= SCREEN_HEIGHT) {
-		game.heart.y = -1;
 	}
 }
 
@@ -680,7 +660,7 @@ void respawn_car(car_t& player_car, game_t& game) {
 
 	if (SDL_GetTicks() - player_car.time >= CAR_RESPAWN_TIME) {
 		player_car.y = CAR_Y;
-		player_car.speed = 2;
+		player_car.speed = START_SPEED;
 		player_car.in_grass = false;
 		game.fire = { 0 };
 	}
@@ -690,41 +670,35 @@ void respawn_car(car_t& player_car, game_t& game) {
 }
 
 
+void manage_car_in_grass(car_t& player_car, game_t& game, gameTime_t& time) {
+	player_car.speed = 0;
+	player_car.in_grass = true;
+	game.fire.y = player_car.y;
+	player_car.time = SDL_GetTicks();
+	if (time.world_time >= INF_LIVES_TIME) {
+		game.lives -= 1;
+	}
+}
+
 //check if car is in grass 
-void check_for_colision(car_t& player_car, game_t& game, gameTime_t& time) {
+void check_for_grass_colision(car_t& player_car, game_t& game, gameTime_t& time) {
+	
 	if (player_car.x + CAR_WIDTH / 2 <= game.grass_width_on_car_y) {
-		player_car.speed = 0;
-		player_car.in_grass = true;
-		game.fire.x = player_car.x - FIRE_WIDTH / 2;
-		game.fire.y = player_car.y;
-		player_car.time = SDL_GetTicks();
-		if (time.world_time >= INF_LIVES_TIME) {
-			game.lives -= 1;
-		}
+		manage_car_in_grass(player_car, game, time);
+		game.fire.x = player_car.x - FIRE_WIDTH + CAR_WIDTH/2;
 	}
 	else if (player_car.x + CAR_WIDTH / 2 >= SCREEN_WIDTH - game.grass_width_on_car_y) {
-		player_car.speed = 0;
-		player_car.in_grass = true;
+		manage_car_in_grass(player_car, game, time);
 		game.fire.x = player_car.x;
-		game.fire.y = player_car.y;
-		player_car.time = SDL_GetTicks();
-		if (time.world_time >= INF_LIVES_TIME) {
-			game.lives -= 1;
-		}
 	}
 	else if (game.grass_width_on_car_y == MIN_GRASS_WIDTH) {
 		if (player_car.x == CAR_X) {
-			player_car.speed = 0;
-			player_car.in_grass = true;
+			manage_car_in_grass(player_car, game, time);
 			game.fire.x = player_car.x;
-			game.fire.y = player_car.y;
-			player_car.time = SDL_GetTicks();
-			if (time.world_time >= INF_LIVES_TIME) {
-				game.lives -= 1;
-			}
 		};
 	}
-	if (player_car.in_grass == true) {
+	
+	if (player_car.in_grass) {
 		respawn_car(player_car, game);
 	}
 }
@@ -885,7 +859,7 @@ void render_legend(SDL_Surface* screen, SDL_Surface* charset, gameTime_t& time, 
 
 	DrawRectangle(screen, 0, 0, SCREEN_WIDTH, LEGEND_HEIGHT, colors.czarny, colors.niebieski);
 	sprintf(text, "Igor Stadnicki 193435");
-	DrawString(screen, screen->w / 2 - strlen(text) * 8 / 2, 5, text, charset);
+	DrawString(screen, TEXT_CENTER, 5, text, charset);
 
 	if (time.world_time >= 60) {
 		sprintf(text, "Time = %.1lf s  score: %.0lf  lives: %d", time.world_time, game.score, game.lives);
@@ -893,10 +867,10 @@ void render_legend(SDL_Surface* screen, SDL_Surface* charset, gameTime_t& time, 
 	else {
 		sprintf(text, "Time = %.1lf s  score: %.0lf  lives: unlimited for 60s (%d)", time.world_time, game.score, game.lives);
 	}
-	DrawString(screen, screen->w / 2 - strlen(text) * 8 / 2, 20, text, charset);
+	DrawString(screen, TEXT_CENTER, 20, text, charset);
 
 	sprintf(text, "Esc - wyjscie, \030 - przyspieszenie, \031 - zwolnienie, n - nowa gra");
-	DrawString(screen, screen->w / 2 - strlen(text) * 8 / 2, 35, text, charset);
+	DrawString(screen, TEXT_CENTER, 35, text, charset);
 
 	SDL_UpdateTexture(scrtex, NULL, screen->pixels, screen->pitch);
 
@@ -948,12 +922,12 @@ void events_handling(SDL_Event& event, car_t& car, game_t& game, gameTime_t& tim
 			}
 			else if (event.key.keysym.sym == SDLK_UP && !game.pause && !car.in_grass && car.in_grass == false) {
 
-				if (car.speed + 1 <= 4)
-					car.speed += 1;
+				if (car.speed + SPEED_INCREMENT <= MAX_SPEED)
+					car.speed += SPEED_INCREMENT;
 			}
 			else if (event.key.keysym.sym == SDLK_DOWN && !game.pause && car.in_grass == false) {
-				if (car.speed - 1 >= 0)
-					car.speed -= 1;
+				if (car.speed - SPEED_INCREMENT >= 0)
+					car.speed -= SPEED_INCREMENT;
 			}
 			else if (event.key.keysym.sym == SDLK_n) restart_game(game, time, car);
 			else if (event.key.keysym.sym == SDLK_p) stop_game(car, time, game);
@@ -988,7 +962,7 @@ void restart_game(game_t& game, gameTime_t& time, car_t& car) {
 	time.world_time = 0;
 	time.t1 = SDL_GetTicks();
 	time.t2 = 0;
-	car.speed = 2;
+	car.speed = START_SPEED;
 	car.x = CAR_X;
 	car.y = CAR_Y;
 	cout << game.lives << endl;
@@ -1012,6 +986,7 @@ void render_bullet(SDL_Renderer* renderer, game_t& game, SDL_Texture* bullet_tex
 		SDL_Rect bullet_rect = { game.bullets.ptr[i].x, game.bullets.ptr[i].y, BULLET_WIDTH, BULLET_HEIGTH };
 		SDL_RenderCopy(renderer, bullet_texture, NULL, &bullet_rect);
 	}
+	move_bullets(game);
 }
 
 
@@ -1024,10 +999,17 @@ void render_fire(SDL_Renderer* renderer, game_t& game, SDL_Texture* fire) {
 }
 
 
-void render_heart(SDL_Renderer* renderer, game_t& game, SDL_Texture* heart) {
+void render_heart(SDL_Renderer* renderer, game_t& game, SDL_Texture* heart, car_t &player_car) {
 
 	SDL_Rect heart_rect = { game.heart.x, game.heart.y, HEART_WIDTH, HEART_HEIGTH };
 	SDL_RenderCopy(renderer, heart, NULL, &heart_rect);
+
+	if (game.heart.y >= 0) {
+		game.heart.y += player_car.speed;
+	}
+	if (game.heart.y >= SCREEN_HEIGHT) {
+		game.heart.y = -1;
+	}
 }
 
 
@@ -1041,9 +1023,9 @@ void show_gameover_screen(SDL_Surface* screen, colors_t& colors, SDL_Surface* ch
 	SDL_FillRect(screen, NULL, colors.czarny);
 	char text[128];
 	sprintf(text, "GAME OVER SCORE: %.lf", game.score);
-	DrawString(screen, screen->w / 2 - strlen(text) * 8 / 2, 50, text, charset);
+	DrawString(screen, TEXT_CENTER, 50, text, charset);
 	sprintf(text, "Click n for new game");
-	DrawString(screen, screen->w / 2 - strlen(text) * 8 / 2, 66, text, charset);
+	DrawString(screen, TEXT_CENTER, 66, text, charset);
 	SDL_UpdateTexture(scrtex, NULL, screen->pixels, screen->pitch);
 	SDL_RenderCopy(renderer, scrtex, NULL, NULL);
 	SDL_RenderPresent(renderer);
@@ -1054,7 +1036,7 @@ void show_pause_screen(SDL_Surface* screen, colors_t& colors, SDL_Surface* chars
 	SDL_FillRect(screen, NULL, colors.czarny);
 	char text[128];
 	sprintf(text, "GAME PAUSED");
-	DrawString(screen, screen->w / 2 - strlen(text) * 8 / 2, 50, text, charset);
+	DrawString(screen, TEXT_CENTER, 50, text, charset);
 	SDL_UpdateTexture(scrtex, NULL, screen->pixels, screen->pitch);
 	SDL_RenderCopy(renderer, scrtex, NULL, NULL);
 	SDL_RenderPresent(renderer);

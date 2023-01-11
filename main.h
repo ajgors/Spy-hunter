@@ -33,6 +33,13 @@ using namespace std;
 #define CAR_RESPAWN_TIME 1500	// in Miliseconds
 #define INF_LIVES_TIME 60		// in Seconds
 #define SAVES_NUMBER 10
+#define BULLET_SPEED 7
+#define MAX_SPEED 16
+#define SPEED_INCREMENT 4
+#define START_SPEED 8
+#define TEXT_CENTER screen->w / 2 - strlen(text) * 8 / 2
+#define GRASS_SPEED 4
+
 
 struct car_t;
 struct gameTime_t;
@@ -45,9 +52,9 @@ struct colors_t;
 
 
 void pick_up_heart(game_t& game, car_t& player_car);
-void generate_random_live(game_t& game, gameTime_t& time);
+void generate_random_heart(game_t& game, gameTime_t& time);
 void free_textures(textures_t& textures);
-void check_for_colision(car_t& car, game_t& game, gameTime_t& time);
+void check_for_grass_colision(car_t& car, game_t& game, gameTime_t& time);
 int init(SDL_Window*& window, SDL_Renderer*& renderer, SDL_Surface*& screen, SDL_Texture*& scrtex);
 void free_memory(SDL_Surface* screen, SDL_Texture* scrtex, SDL_Renderer* renderer, SDL_Window* window);
 void load_charset(SDL_Surface*& charset);
@@ -70,14 +77,14 @@ void DrawString(SDL_Surface* screen, int x, int y, const char* text, SDL_Surface
 void generate_random_car(textures_t textures, game_t* game);
 void icrease_score(game_t& game, car_t& car);
 void scroll_grass(game_t& game, car_t& player_car);
-void clear_cars_outside_screen(game_t& game);
+void remove_cars_outside_screen(game_t& game);
 void update_cars_speed(game_t& game);
 void render_cars(SDL_Renderer* renderer, textures_t& textures, game_t& game, car_t& player_car);
 void manage_cars_position(game_t& game, car_t& player_car, gameTime_t& time);
 void render_bullet(SDL_Renderer* renderer, game_t& game, SDL_Texture* bullet_texture);
 void render_fire(SDL_Renderer* renderer, game_t& game, SDL_Texture* fire);
-void render_heart(SDL_Renderer* renderer, game_t& game, SDL_Texture* heart);
-void move_bullet(game_t& game);
+void render_heart(SDL_Renderer* renderer, game_t& game, SDL_Texture* heart, car_t& player_car);
+void move_bullets(game_t& game);
 void init_colors(colors_t& colors, SDL_Surface* screen);
 void show_gameover_screen(SDL_Surface* screen, colors_t& colors, SDL_Surface* charset, SDL_Texture* scrtex, SDL_Renderer* renderer, game_t& game);
 void show_pause_screen(SDL_Surface* screen, colors_t& colors, SDL_Surface* charset, SDL_Texture* scrtex, SDL_Renderer* renderer);
