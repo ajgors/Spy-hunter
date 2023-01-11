@@ -30,7 +30,9 @@ using namespace std;
 #define HEART_HEIGTH 20
 #define BULLET_WIDTH 1
 #define BULLET_HEIGTH 10
-
+#define CAR_RESPAWN_TIME 1500	// in Miliseconds
+#define INF_LIVES_TIME 60		// in Seconds
+#define SAVES_NUMBER 10
 
 struct car_t;
 struct gameTime_t;
@@ -62,7 +64,7 @@ void render_implemented(SDL_Surface* screen, SDL_Surface* charset, SDL_Texture* 
 void stop_game(car_t& car, gameTime_t& time, game_t& game);
 SDL_Texture* load_texture(char s[], SDL_Renderer* renderer);
 void load_saves(char saves[10][128]);
-void load_save_screen(SDL_Surface* screen, SDL_Surface* charset, SDL_Texture* scrtex, SDL_Renderer* renderer, SDL_Event& event, char saves[10][128]);
+void show_saves_screen(SDL_Surface* screen, SDL_Surface* charset, SDL_Texture* scrtex, SDL_Renderer* renderer, SDL_Event& event, char saves[10][128]);
 void load_save(game_t& game, gameTime_t& game_time, car_t& car, char file_name[]);
 void DrawString(SDL_Surface* screen, int x, int y, const char* text, SDL_Surface* charset);
 void generate_random_car(textures_t textures, game_t* game);
@@ -77,3 +79,6 @@ void render_fire(SDL_Renderer* renderer, game_t& game, SDL_Texture* fire);
 void render_heart(SDL_Renderer* renderer, game_t& game, SDL_Texture* heart);
 void move_bullet(game_t& game);
 void init_colors(colors_t& colors, SDL_Surface* screen);
+void show_gameover_screen(SDL_Surface* screen, colors_t& colors, SDL_Surface* charset, SDL_Texture* scrtex, SDL_Renderer* renderer, game_t& game);
+void show_pause_screen(SDL_Surface* screen, colors_t& colors, SDL_Surface* charset, SDL_Texture* scrtex, SDL_Renderer* renderer);
+void load_picked_save(SDL_Event& event, game_t& game, gameTime_t& time, car_t& player_car, char  saves[10][128]);

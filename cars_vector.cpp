@@ -9,6 +9,7 @@ struct car_t {
     int y;
     int speed;
     bool in_grass;
+    int time;
 };
 //Struktura opisuj¹ca wektor liczb ca³kowitych.
 //j-ta komórka wektora w (0 <= j < w.count) jest dostêpna jest jako w.ptr[j].
