@@ -92,3 +92,4 @@ void init_colors(colors_t& colors, SDL_Surface* screen);
 void show_gameover_screen(SDL_Surface* screen, colors_t& colors, SDL_Surface* charset, SDL_Texture* scrtex, SDL_Renderer* renderer, game_t& game);
 void show_pause_screen(SDL_Surface* screen, colors_t& colors, SDL_Surface* charset, SDL_Texture* scrtex, SDL_Renderer* renderer);
 void load_picked_save(SDL_Event& event, game_t& game, gameTime_t& time, car_t& player_car, char  saves[10][128]);
+void move_hostile_car_to_player(game_t& game, car_t& player_car);

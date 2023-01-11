@@ -159,6 +159,7 @@ int main(int argc, char* argv[]) {
 			generate_random_car(textures, &game, player_car);
 			generate_random_heart(game, time);
 			pick_up_heart(game, player_car);
+			move_hostile_car_to_player(game, player_car);
 			render_grass(game, renderer, textures.grass, player_car);
 			render_implemented(screen, charset, scrtex, renderer);
 			check_for_grass_colision(player_car, game, time);
@@ -265,7 +266,6 @@ void manage_cars_position(game_t& game, car_t& player_car, gameTime_t& time) {
 			if (k == i) continue;
 			if (game.cars.ptr[i].y - CAR_HEIGTH < game.cars.ptr[k].y && game.cars.ptr[i].y > game.cars.ptr[k].y && game.cars.ptr[i].x + CAR_WIDTH >= game.cars.ptr[k].x && game.cars.ptr[i].x <= game.cars.ptr[k].x + CAR_WIDTH) {
 				game.cars.ptr[i].y += 30;
-				game.cars.ptr[i].speed -= SPEED_INCREMENT;
 			}
 		}
 
@@ -1070,5 +1070,22 @@ void load_picked_save(SDL_Event& event, game_t& game, gameTime_t& time, car_t& p
 	if (save_number >= 0 && save_number < SAVES_NUMBER) {
 		load_save(game, time, player_car, saves[save_number]);
 		game.save_screen = false;
+	}
+}
+
+//randomly move hostile car towards player car
+void move_hostile_car_to_player(game_t& game, car_t& player_car) {
+	for (int i = 0; i < game.cars.count; i++) {
+		int n = (rand() % 50) + 1;
+		if (n == 1) {
+			if (game.cars.ptr[i].type == HOSTILE) {
+				if (game.cars.ptr[i].x > player_car.x) {
+					game.cars.ptr[i].x -= CAR_MOVE_PIXELS;
+				}
+				else if (game.cars.ptr[i].x < player_car.x) {
+					game.cars.ptr[i].x += CAR_MOVE_PIXELS;
+				}
+			}
+		}
 	}
 }
