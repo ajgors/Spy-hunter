@@ -28,6 +28,8 @@ using namespace std;
 #define FIRE_HEIGTH 100
 #define HEART_WIDTH 20
 #define HEART_HEIGTH 20
+#define BULLET_WIDTH 1
+#define BULLET_HEIGTH 10
 
 
 struct car_t;
@@ -37,7 +39,7 @@ struct game_t;
 struct textures_t;
 struct grass_t;
 struct bullet_t;
-
+struct colors_t;
 
 
 void pick_up_heart(game_t& game, car_t& player_car);
@@ -50,7 +52,7 @@ void load_charset(SDL_Surface*& charset);
 void render_car(car_t& car, SDL_Renderer* renderer, SDL_Texture* carTexture);
 void events_handling(SDL_Event& event, car_t& car, game_t& game, gameTime_t& time);
 void calculate_time(gameTime_t& time);
-void render_legend(SDL_Surface* screen, SDL_Surface* charset, gameTime_t& time, fps_t& game_fps, SDL_Renderer* renderer, SDL_Texture* scrtex, game_t game);
+void render_legend(SDL_Surface* screen, SDL_Surface* charset, gameTime_t& time, fps_t& game_fps, SDL_Renderer* renderer, SDL_Texture* scrtex, game_t game, colors_t &colors);
 void cap_fps(fps_t& game_fps, car_t& car);
 void generate_road_que(game_t& game);
 void generate_start_road(game_t& game);
@@ -70,3 +72,8 @@ void clear_cars_outside_screen(game_t& game);
 void update_cars_speed(game_t& game);
 void render_cars(SDL_Renderer* renderer, textures_t& textures, game_t& game, car_t& player_car);
 void manage_cars_position(game_t& game, car_t& player_car, gameTime_t& time);
+void render_bullet(SDL_Renderer* renderer, game_t& game, SDL_Texture* bullet_texture);
+void render_fire(SDL_Renderer* renderer, game_t& game, SDL_Texture* fire);
+void render_heart(SDL_Renderer* renderer, game_t& game, SDL_Texture* heart);
+void move_bullet(game_t& game);
+void init_colors(colors_t& colors, SDL_Surface* screen);
