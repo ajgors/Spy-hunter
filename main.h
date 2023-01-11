@@ -34,12 +34,15 @@ using namespace std;
 #define INF_LIVES_TIME 60		// in Seconds
 #define SAVES_NUMBER 10
 #define BULLET_SPEED 7
-#define MAX_SPEED 16
 #define SPEED_INCREMENT 4
-#define START_SPEED 8
+#define MAX_SPEED 4 * SPEED_INCREMENT
+#define START_SPEED 2 * SPEED_INCREMENT
 #define TEXT_CENTER screen->w / 2 - strlen(text) * 8 / 2
 #define GRASS_SPEED 4
-
+#define MAX_CARS 14
+#define OUT_OF_SCREEN -1
+#define NORMAL 0
+#define HOSTILE 1
 
 struct car_t;
 struct gameTime_t;
@@ -61,7 +64,7 @@ void load_charset(SDL_Surface*& charset);
 void render_car(car_t& car, SDL_Renderer* renderer, SDL_Texture* carTexture);
 void events_handling(SDL_Event& event, car_t& car, game_t& game, gameTime_t& time);
 void calculate_time(gameTime_t& time);
-void render_legend(SDL_Surface* screen, SDL_Surface* charset, gameTime_t& time, fps_t& game_fps, SDL_Renderer* renderer, SDL_Texture* scrtex, game_t game, colors_t &colors);
+void render_legend(SDL_Surface* screen, SDL_Surface* charset, gameTime_t& time, fps_t& game_fps, SDL_Renderer* renderer, SDL_Texture* scrtex, game_t game, colors_t& colors);
 void cap_fps(fps_t& game_fps, car_t& car);
 void generate_road_que(game_t& game);
 void generate_start_road(game_t& game);
@@ -74,7 +77,7 @@ void load_saves(char saves[10][128]);
 void show_saves_screen(SDL_Surface* screen, SDL_Surface* charset, SDL_Texture* scrtex, SDL_Renderer* renderer, SDL_Event& event, char saves[10][128]);
 void load_save(game_t& game, gameTime_t& game_time, car_t& car, char file_name[]);
 void DrawString(SDL_Surface* screen, int x, int y, const char* text, SDL_Surface* charset);
-void generate_random_car(textures_t textures, game_t* game);
+void generate_random_car(textures_t textures, game_t* game, car_t& player_car);
 void icrease_score(game_t& game, car_t& car);
 void scroll_grass(game_t& game, car_t& player_car);
 void remove_cars_outside_screen(game_t& game);
