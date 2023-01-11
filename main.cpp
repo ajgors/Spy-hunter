@@ -135,14 +135,14 @@ int main(int argc, char* argv[]) {
 	};
 
 	init_colors(colors, screen);
-	generate_start_road(game);
+	generate_start_grass(game);
 
 	while (game.running) {
 
 		if (game.save_screen) {
 			char saves[SAVES_NUMBER][128] = { 0 };
 			load_saves(saves);
-			show_saves_screen(screen, charset, scrtex, renderer, event, saves);
+			show_saves_screen(screen, charset, scrtex, renderer, event, saves, colors);
 			load_picked_save(event, game, time, player_car, saves);
 		}
 		else if (game.pause) {
@@ -154,14 +154,14 @@ int main(int argc, char* argv[]) {
 		else {
 			game_fps.start_loop = SDL_GetTicks();
 			SDL_RenderClear(renderer);
-			generate_road_que(game);
+			generate_grass_que(game);
 			calculate_time(time);
 			generate_random_car(textures, &game, player_car);
 			generate_random_heart(game, time);
 			pick_up_heart(game, player_car);
 			move_hostile_car_to_player(game, player_car);
 			render_grass(game, renderer, textures.grass, player_car);
-			render_implemented(screen, charset, scrtex, renderer);
+			render_implemented(screen, charset, scrtex, renderer, colors);
 			check_for_grass_colision(player_car, game, time);
 			render_fire(renderer, game, textures.fire);
 			render_heart(renderer, game, textures.heart, player_car);
@@ -308,12 +308,12 @@ void scroll_grass(game_t& game, car_t& player_car) {
 }
 
 
-//increse score when car traveled height of screen
+//increase score when car traveled height of screen
 void icrease_score(game_t& game, car_t& car) {
 
 	if (game.traveled_distance >= SCREEN_HEIGHT) {
 		game.traveled_distance -= SCREEN_HEIGHT;
-		
+
 		//return if score is halted
 		if (SDL_GetTicks() - game.score_halt < 3000 && game.score_halt > 0) return;
 		game.score_halt = 0;
@@ -401,7 +401,7 @@ SDL_Texture* load_texture(char s[], SDL_Renderer* renderer) {
 }
 
 
-void load_saves(char saves[10][128]) {
+void load_saves(char saves[SAVES_NUMBER][128]) {
 	char path[] = "./";
 	char extension[] = ".bin";
 
@@ -415,23 +415,21 @@ void load_saves(char saves[10][128]) {
 }
 
 
-void show_saves_screen(SDL_Surface* screen, SDL_Surface* charset, SDL_Texture* scrtex, SDL_Renderer* renderer, SDL_Event& event, char saves[10][128]) {
+void show_saves_screen(SDL_Surface* screen, SDL_Surface* charset, SDL_Texture* scrtex, SDL_Renderer* renderer, SDL_Event& event, char saves[10][128], colors_t &colors) {
 	SDL_RenderClear(renderer);
-	int czarny = SDL_MapRGB(screen->format, 0x00, 0x00, 0x00);
-	SDL_FillRect(screen, NULL, czarny);
+	SDL_FillRect(screen, NULL, colors.czarny);
 	char text[128];
-	int niebieski = SDL_MapRGB(screen->format, 0x11, 0x11, 0xCC);
 	sprintf(text, "Load game");
-	DrawString(screen, TEXT_CENTER, 40, text, charset);
+	DrawString(screen, TEXT_CENTER, SAVES_Y, text, charset);
 	sprintf(text, " press number to load save");
-	DrawString(screen, TEXT_CENTER, 60, text, charset);
+	DrawString(screen, TEXT_CENTER, SAVES_Y + 20, text, charset);
 
-	for (int i = 0; i < 10; i++) {
+	for (int i = 0; i < SAVES_NUMBER; i++) {
 		if (saves[i][0] == '\0') break;
 		_itoa(i + 1, text, 10);
 		strcat_s(text, ") ");
 		strcat_s(text, saves[i]);
-		DrawString(screen, TEXT_CENTER, 70 + (20 * (i + 1)), text, charset);
+		DrawString(screen, TEXT_CENTER, SAVES_Y + 30 + (20 * (i + 1)), text, charset);
 	}
 
 	SDL_UpdateTexture(scrtex, NULL, screen->pixels, screen->pitch);
@@ -527,53 +525,27 @@ void save_game(game_t& game, gameTime_t& game_time, car_t& car) {
 }
 
 
-int generate_random_x_on_road(game_t* game) {
-	int road_width = SCREEN_WIDTH - 2 * game->grass.ptr[0].width;
-	int x = (rand() & road_width) + 1;
-	int left = x % CAR_MOVE_PIXELS;
-	x = x - left;
-	if (x > SCREEN_WIDTH / 2) x -= GRASS_WIDTH;
-	return x;
-}
-
-
 void pick_up_heart(game_t& game, car_t& player_car) {
-	int leftA, leftB;
-	int rightA, rightB;
-	int topA, topB;
-	int bottomA, bottomB;
+	int left_heart, rigth_heart, top_heart, bottom_heart;
+	int left_car, rigth_car, top_car, bottom_car;	
 
-	leftA = game.heart.x;
-	rightA = game.heart.x + HEART_WIDTH;
-	topA = game.heart.y;
-	bottomA = game.heart.y + HEART_HEIGTH;
+	left_heart = game.heart.x;
+	rigth_heart = game.heart.x + HEART_WIDTH;
+	top_heart = game.heart.y;
+	bottom_heart = game.heart.y + HEART_HEIGTH;
 
-	leftB = player_car.x;
-	rightB = player_car.x + CAR_WIDTH;
-	topB = CAR_Y;
-	bottomB = CAR_Y + CAR_HEIGTH;
+	left_car = player_car.x;
+	rigth_car = player_car.x + CAR_WIDTH;
+	top_car = player_car.y;
+	bottom_car = player_car.y + CAR_HEIGTH;
 
 	bool picked = true;
 
-	if (bottomA <= topB)
-	{
-		picked = false;
-	}
-
-	if (topA >= bottomB)
-	{
-		picked = false;
-	}
-
-	if (rightA <= leftB)
-	{
-		picked = false;
-	}
-
-	if (leftA >= rightB)
-	{
-		picked = false;
-	}
+	//check if heart and car are in collision
+	if (bottom_heart <= top_car) picked = false;
+	if (top_heart >= bottom_car) picked = false;
+	if (rigth_heart <= left_car) picked = false;
+	if (left_heart >=  rigth_car) picked = false;
 
 	if (picked == true) {
 		game.lives++;
@@ -582,7 +554,19 @@ void pick_up_heart(game_t& game, car_t& player_car) {
 }
 
 
+int generate_random_x_on_road(game_t* game) {
+
+	int road_width = SCREEN_WIDTH - 2 * game->grass.ptr[0].width;
+	int x = (rand() & road_width) + 1;
+	int left = x % CAR_MOVE_PIXELS;
+	x = x - left;
+	if (x > SCREEN_WIDTH / 2) x -= CAR_MOVE_PIXELS;
+	return x;
+}
+
+
 void generate_random_car(textures_t textures, game_t* game, car_t& player_car) {
+
 	if (game->cars.count <= MAX_CARS) {
 		int n = (rand() % 99) + 1;
 		if (n == 1) {
@@ -605,9 +589,10 @@ void generate_random_car(textures_t textures, game_t* game, car_t& player_car) {
 	}
 }
 
-
+//generates heart when in unlimited lives stage
 void generate_random_heart(game_t& game, gameTime_t& time) {
-	if (time.world_time <= INF_LIVES_TIME && game.heart.y == -1) {
+
+	if (time.world_time <= INF_LIVES_TIME && game.heart.y == OUT_OF_SCREEN) {
 		int n = (rand() % 1000) + 1;
 		if (n == 1) {
 			int x = generate_random_x_on_road(&game);
@@ -628,12 +613,14 @@ void free_textures(textures_t& textures) {
 	SDL_DestroyTexture(textures.fire);
 }
 
+
 //loads charset bitmap
 void load_charset(SDL_Surface*& charset) {
 	charset = SDL_LoadBMP("./cs8x8.bmp");
 	if (charset == NULL) cout << SDL_GetError();
 	SDL_SetColorKey(charset, true, 0x000000);
 }
+
 
 //frees game allocated memory
 void free_memory(SDL_Surface* screen, SDL_Texture* scrtex, SDL_Renderer* renderer, SDL_Window* window) {
@@ -642,6 +629,7 @@ void free_memory(SDL_Surface* screen, SDL_Texture* scrtex, SDL_Renderer* rendere
 	SDL_DestroyRenderer(renderer);
 	SDL_DestroyWindow(window);
 }
+
 
 //inits windows, renderer screen and screntexture
 int init(SDL_Window*& window, SDL_Renderer*& renderer, SDL_Surface*& screen, SDL_Texture*& scrtex) {
@@ -670,7 +658,6 @@ int init(SDL_Window*& window, SDL_Renderer*& renderer, SDL_Surface*& screen, SDL
 
 
 
-//respawn car after 3 seconds after death
 void respawn_car(car_t& player_car, game_t& game) {
 
 	if (game.grass_width_on_car_y == MIN_GRASS_WIDTH) {
@@ -693,6 +680,7 @@ void respawn_car(car_t& player_car, game_t& game) {
 
 
 void manage_car_in_grass(car_t& player_car, game_t& game, gameTime_t& time) {
+
 	player_car.speed = 0;
 	player_car.in_grass = true;
 	game.fire.y = player_car.y;
@@ -726,16 +714,14 @@ void check_for_grass_colision(car_t& player_car, game_t& game, gameTime_t& time)
 }
 
 
-
-void render_implemented(SDL_Surface* screen, SDL_Surface* charset, SDL_Texture* scrtex, SDL_Renderer* renderer) {
+//render implemented rectangle containing implemented elements
+void render_implemented(SDL_Surface* screen, SDL_Surface* charset, SDL_Texture* scrtex, SDL_Renderer* renderer, colors_t& colors) {
 	char text[128];
-	int czarny = SDL_MapRGB(screen->format, 0x00, 0x00, 0x00);
-	int niebieski = SDL_MapRGB(screen->format, 0x11, 0x11, 0xCC);
 
-	DrawRectangle(screen, SCREEN_WIDTH - IMPLEMENTED_WIDTH, SCREEN_HEIGHT - IMPLEMENTED_HEIGHT, IMPLEMENTED_WIDTH, IMPLEMENTED_HEIGHT, czarny, niebieski);
+	DrawRectangle(screen, SCREEN_WIDTH - IMPLEMENTED_WIDTH, SCREEN_HEIGHT - IMPLEMENTED_HEIGHT, IMPLEMENTED_WIDTH, IMPLEMENTED_HEIGHT, colors.czarny, colors.niebieski);
 	sprintf(text, "a b c d e f g");
 	DrawString(screen, screen->w - IMPLEMENTED_WIDTH, screen->h - IMPLEMENTED_HEIGHT, text, charset);
-	sprintf(text, "e g");
+	sprintf(text, "h i j k m");
 	DrawString(screen, screen->w - IMPLEMENTED_WIDTH, screen->h - (IMPLEMENTED_HEIGHT - 10), text, charset);
 
 	SDL_UpdateTexture(scrtex, NULL, screen->pixels, screen->pitch);
@@ -751,8 +737,9 @@ void render_implemented(SDL_Surface* screen, SDL_Surface* charset, SDL_Texture* 
 
 
 void render_grass(game_t& game, SDL_Renderer* renderer, SDL_Texture* roadTexture, car_t& car) {
-	for (int i = 0; i < game.grass.count; ++i)
-	{
+
+	for (int i = 0; i < game.grass.count; ++i) {
+
 		SDL_Rect roadRect_left = { 0 };
 		roadRect_left.x = 0;
 		roadRect_left.y = game.grass.ptr[i].y;
@@ -765,11 +752,12 @@ void render_grass(game_t& game, SDL_Renderer* renderer, SDL_Texture* roadTexture
 		roadRect_right.w = game.grass.ptr[i].width;
 		roadRect_right.h = GRASS_HEIGHT;
 
-		//saving grass width on car y position (used for car grass collision)
+		//save grass width on car Y coordiante (used for car grass collision)
 		if (roadRect_right.y <= CAR_Y + CAR_HEIGTH && roadRect_right.y >= CAR_Y && game.grass.ptr[i].width > 0) {
 			game.grass_width_on_car_y = game.grass.ptr[i].width;
 		}
 
+		//render grass in middle when grass is minimal width (to make 2 roads)
 		if (game.grass.ptr[i].width == MIN_GRASS_WIDTH) {
 			SDL_Rect roadRect_middle = { 0 };
 			roadRect_middle.x = SCREEN_WIDTH / 2 - GRASS_WIDTH / 2;
@@ -785,7 +773,9 @@ void render_grass(game_t& game, SDL_Renderer* renderer, SDL_Texture* roadTexture
 }
 
 
-void generate_start_road(game_t& game) {
+//generates starting grass width
+void generate_start_grass(game_t& game) {
+
 	if (game.grass.count == 0) {
 		for (int i = 0; i < NUMBER_OF_GRASS_TXT; i++) {
 
@@ -799,20 +789,22 @@ void generate_start_road(game_t& game) {
 }
 
 
-// n = 1 - zwê¿enie drogi
-// n = 2 - rozszerzenie drogi
-// n = 3 - bez zmian
-void generate_road_que(game_t& game) {
+// n = 1 - widen grass (narrow road)
+// n = 2 - narrow grass (widen road)
+// n = 3 - no changes
+void generate_grass_que(game_t& game) {
 
 	if (game.grass_que.count == 0) {
 		int n = (rand() % 3) + 1;
 		if (n == 1) {
+			//if grass can't be wider generate max width grasss
 			if (game.grass.ptr[0].width == MAX_GRASS_WIDTH) {
 				for (int i = 0; i < NUMBER_OF_GRASS_TXT; ++i)
 				{
 					push_back(&game.grass_que, MAX_GRASS_WIDTH);
 				}
 			}
+			//widen grass in 3 steps
 			else {
 				for (int i = 0; i < NUMBER_OF_GRASS_TXT * 3; ++i)
 				{
@@ -833,12 +825,14 @@ void generate_road_que(game_t& game) {
 			}
 		}
 		else if (n == 2) {
+			//if grass can't be narrower generate min width grasss
 			if (game.grass.ptr[0].width == MIN_GRASS_WIDTH) {
 				for (int i = 0; i < NUMBER_OF_GRASS_TXT; ++i)
 				{
 					push_back(&game.grass_que, MIN_GRASS_WIDTH);
 				}
 			}
+			//narrow grass in 3 steps
 			else {
 				for (int i = 0; i < NUMBER_OF_GRASS_TXT * 3; ++i)
 				{
@@ -857,6 +851,7 @@ void generate_road_que(game_t& game) {
 				}
 			}
 		}
+		//generate grass without changes
 		else {
 			for (int i = 0; i < NUMBER_OF_GRASS_TXT * 3; ++i)
 			{
@@ -867,6 +862,7 @@ void generate_road_que(game_t& game) {
 }
 
 
+//caps fps to desiried 
 void cap_fps(fps_t& game_fps, car_t& car) {
 	int delta = (SDL_GetTicks() - game_fps.start_loop);
 	if (delta < game_fps.desired_delta) {
@@ -875,30 +871,31 @@ void cap_fps(fps_t& game_fps, car_t& car) {
 }
 
 
+//renders legend containins game informations
 void render_legend(SDL_Surface* screen, SDL_Surface* charset, gameTime_t& time, fps_t& game_fps, SDL_Renderer* renderer, SDL_Texture* scrtex, game_t game, colors_t& colors) {
 
 	char text[128];
 
-	DrawRectangle(screen, 0, 0, SCREEN_WIDTH, LEGEND_HEIGHT, colors.czarny, colors.niebieski);
+	DrawRectangle(screen, LEGEND_X, LEGEND_Y, SCREEN_WIDTH, LEGEND_HEIGHT, colors.czarny, colors.niebieski);
 	sprintf(text, "Igor Stadnicki 193435");
-	DrawString(screen, TEXT_CENTER, 5, text, charset);
+	DrawString(screen, TEXT_CENTER, LEGEND_Y + 5, text, charset);
 
-	if (time.world_time >= 60) {
+	if (time.world_time >= INF_LIVES_TIME) {
 		sprintf(text, "Time = %.1lf s  score: %.0lf  lives: %d", time.world_time, game.score, game.lives);
 	}
 	else {
 		sprintf(text, "Time = %.1lf s  score: %.0lf  lives: unlimited for 60s (%d)", time.world_time, game.score, game.lives);
 	}
-	DrawString(screen, TEXT_CENTER, 20, text, charset);
+	DrawString(screen, TEXT_CENTER, LEGEND_Y + 20, text, charset);
 
 	sprintf(text, "Esc - wyjscie, \030 - przyspieszenie, \031 - zwolnienie, n - nowa gra");
-	DrawString(screen, TEXT_CENTER, 35, text, charset);
+	DrawString(screen, TEXT_CENTER, LEGEND_Y + 35, text, charset);
 
 	SDL_UpdateTexture(scrtex, NULL, screen->pixels, screen->pitch);
 
 	SDL_Rect roadRect_left;
-	roadRect_left.x = 0;
-	roadRect_left.y = 0;
+	roadRect_left.x = LEGEND_X;
+	roadRect_left.y = LEGEND_Y;
 	roadRect_left.w = SCREEN_WIDTH;
 	roadRect_left.h = LEGEND_HEIGHT;
 
@@ -925,7 +922,7 @@ void fire_bullet(game_t& game, car_t& player_car) {
 }
 
 
-// Obs³uga zdarzeñ
+//handling input
 void events_handling(SDL_Event& event, car_t& car, game_t& game, gameTime_t& time) {
 	while (SDL_PollEvent(&event))
 	{
@@ -978,7 +975,7 @@ void restart_game(game_t& game, gameTime_t& time, car_t& car) {
 	init_car_vector(&game.cars);
 	free(game.grass.ptr);
 	init_grass_vector(&game.grass);
-	generate_start_road(game);
+	generate_start_grass(game);
 	game.score = 0;
 	game.lives = START_LIVES;
 	time.world_time = 0;
@@ -1002,6 +999,7 @@ void render_car(car_t& car, SDL_Renderer* renderer, SDL_Texture* carTexture) {
 }
 
 
+//rendres bullets
 void render_bullet(SDL_Renderer* renderer, game_t& game, SDL_Texture* bullet_texture) {
 
 	for (int i = 0; i < game.bullets.count; i++) {
@@ -1012,6 +1010,7 @@ void render_bullet(SDL_Renderer* renderer, game_t& game, SDL_Texture* bullet_tex
 }
 
 
+//renders fire
 void render_fire(SDL_Renderer* renderer, game_t& game, SDL_Texture* fire) {
 
 	if (game.fire.x != 0 && game.fire.y != 0) {
@@ -1021,6 +1020,7 @@ void render_fire(SDL_Renderer* renderer, game_t& game, SDL_Texture* fire) {
 }
 
 
+//renders heart and moves it
 void render_heart(SDL_Renderer* renderer, game_t& game, SDL_Texture* heart, car_t& player_car) {
 
 	SDL_Rect heart_rect = { game.heart.x, game.heart.y, HEART_WIDTH, HEART_HEIGTH };
@@ -1035,12 +1035,14 @@ void render_heart(SDL_Renderer* renderer, game_t& game, SDL_Texture* heart, car_
 }
 
 
+//initializes colors in struct
 void init_colors(colors_t& colors, SDL_Surface* screen) {
 	colors.czarny = SDL_MapRGB(screen->format, 0x00, 0x00, 0x00);
 	colors.niebieski = SDL_MapRGB(screen->format, 0x11, 0x11, 0xCC);
 }
 
 
+//shows game over screen
 void show_gameover_screen(SDL_Surface* screen, colors_t& colors, SDL_Surface* charset, SDL_Texture* scrtex, SDL_Renderer* renderer, game_t& game) {
 	SDL_FillRect(screen, NULL, colors.czarny);
 	char text[128];
@@ -1054,6 +1056,7 @@ void show_gameover_screen(SDL_Surface* screen, colors_t& colors, SDL_Surface* ch
 }
 
 
+//shows pause screen
 void show_pause_screen(SDL_Surface* screen, colors_t& colors, SDL_Surface* charset, SDL_Texture* scrtex, SDL_Renderer* renderer) {
 	SDL_FillRect(screen, NULL, colors.czarny);
 	char text[128];
@@ -1065,6 +1068,7 @@ void show_pause_screen(SDL_Surface* screen, colors_t& colors, SDL_Surface* chars
 }
 
 
+//loads piceked by user save
 void load_picked_save(SDL_Event& event, game_t& game, gameTime_t& time, car_t& player_car, char  saves[10][128]) {
 	int save_number = event.key.keysym.sym - '0' - 1;
 	if (save_number >= 0 && save_number < SAVES_NUMBER) {
@@ -1072,6 +1076,7 @@ void load_picked_save(SDL_Event& event, game_t& game, gameTime_t& time, car_t& p
 		game.save_screen = false;
 	}
 }
+
 
 //randomly move hostile car towards player car
 void move_hostile_car_to_player(game_t& game, car_t& player_car) {

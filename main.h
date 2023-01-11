@@ -17,7 +17,7 @@ using namespace std;
 #define ERROR 0
 #define SUCCESS 1
 #define CAR_MOVE_PIXELS 25
-#define IMPLEMENTED_WIDTH 80
+#define IMPLEMENTED_WIDTH 105
 #define IMPLEMENTED_HEIGHT 20
 #define MAX_GRASS_WIDTH 8*GRASS_WIDTH
 #define MIN_GRASS_WIDTH GRASS_WIDTH
@@ -43,6 +43,9 @@ using namespace std;
 #define OUT_OF_SCREEN -1
 #define NORMAL 0
 #define HOSTILE 1
+#define LEGEND_X 0
+#define LEGEND_Y 0
+#define SAVES_Y 40
 
 struct car_t;
 struct gameTime_t;
@@ -66,15 +69,15 @@ void events_handling(SDL_Event& event, car_t& car, game_t& game, gameTime_t& tim
 void calculate_time(gameTime_t& time);
 void render_legend(SDL_Surface* screen, SDL_Surface* charset, gameTime_t& time, fps_t& game_fps, SDL_Renderer* renderer, SDL_Texture* scrtex, game_t game, colors_t& colors);
 void cap_fps(fps_t& game_fps, car_t& car);
-void generate_road_que(game_t& game);
-void generate_start_road(game_t& game);
+void generate_grass_que(game_t& game);
+void generate_start_grass(game_t& game);
 void restart_game(game_t& game, gameTime_t& time, car_t& car);
 void render_grass(game_t& game, SDL_Renderer* renderer, SDL_Texture* roadTexture, car_t& car);
-void render_implemented(SDL_Surface* screen, SDL_Surface* charset, SDL_Texture* scrtex, SDL_Renderer* renderer);
+void render_implemented(SDL_Surface* screen, SDL_Surface* charset, SDL_Texture* scrtex, SDL_Renderer* renderer, colors_t& colors);
 void stop_game(car_t& car, gameTime_t& time, game_t& game);
 SDL_Texture* load_texture(char s[], SDL_Renderer* renderer);
 void load_saves(char saves[10][128]);
-void show_saves_screen(SDL_Surface* screen, SDL_Surface* charset, SDL_Texture* scrtex, SDL_Renderer* renderer, SDL_Event& event, char saves[10][128]);
+void show_saves_screen(SDL_Surface* screen, SDL_Surface* charset, SDL_Texture* scrtex, SDL_Renderer* renderer, SDL_Event& event, char saves[10][128], colors_t& colors);
 void load_save(game_t& game, gameTime_t& game_time, car_t& car, char file_name[]);
 void DrawString(SDL_Surface* screen, int x, int y, const char* text, SDL_Surface* charset);
 void generate_random_car(textures_t textures, game_t* game, car_t& player_car);
