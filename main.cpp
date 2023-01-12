@@ -99,7 +99,6 @@ struct colors_t {
 	int niebieski = 0;
 };
 
-//zobaczyc wyœwietlanie save czy nie zatrudno zrobione
 
 
 int main(int argc, char* argv[]) {
@@ -174,7 +173,6 @@ int main(int argc, char* argv[]) {
 			check_for_grass_colision(player_car, game, time);
 			render_fire(renderer, player_car, textures.fire);
 			render_heart(renderer, heart, textures.heart, player_car);
-			update_cars_speed(game);
 			render_cars(renderer, textures, game, player_car);
 			manage_cars_position(game, player_car, time);
 			icrease_score(game, player_car);
@@ -222,17 +220,6 @@ void remove_cars_outside_screen(game_t& game) {
 }
 
 
-//change speed of cars randomly
-void update_cars_speed(game_t& game) {
-	for (int i = 0; i < game.cars.count; i++) {
-		int n = (rand() % 1000) + 1;
-
-		if (n == 1 && game.cars.ptr[i].speed + SPEED_INCREMENT < MAX_SPEED) game.cars.ptr[i].speed += SPEED_INCREMENT;
-		if (n == 1000 && game.cars.ptr[i].speed - SPEED_INCREMENT > 0) game.cars.ptr[i].speed -= SPEED_INCREMENT;
-	}
-}
-
-
 //render cars on screens
 void render_cars(SDL_Renderer* renderer, textures_t& textures, game_t& game, car_t& player_car) {
 	for (int i = 0; i < game.cars.count; i++) {
@@ -261,20 +248,19 @@ void manage_cars_position(game_t& game, car_t& player_car, game_time_t& time) {
 		}
 
 		//cars speed acroding to player speed
-		
-
 		if (player_car.speed - SPEED_INCREMENT == game.cars.ptr[i].speed) game.cars.ptr[i].y += SPEED_INCREMENT;
-		if (player_car.speed - 2*SPEED_INCREMENT == game.cars.ptr[i].speed) game.cars.ptr[i].y += 2*SPEED_INCREMENT;
-		if (player_car.speed - 3*SPEED_INCREMENT == game.cars.ptr[i].speed) game.cars.ptr[i].y += 3*SPEED_INCREMENT;
-		if (player_car.speed - 4*SPEED_INCREMENT == game.cars.ptr[i].speed) game.cars.ptr[i].y += 4*SPEED_INCREMENT;
+		if (player_car.speed - 2 * SPEED_INCREMENT == game.cars.ptr[i].speed) game.cars.ptr[i].y += 2 * SPEED_INCREMENT;
+		if (player_car.speed - 3 * SPEED_INCREMENT == game.cars.ptr[i].speed) game.cars.ptr[i].y += 3 * SPEED_INCREMENT;
+		if (player_car.speed - 4 * SPEED_INCREMENT == game.cars.ptr[i].speed) game.cars.ptr[i].y += 4 * SPEED_INCREMENT;
 		if (player_car.speed + SPEED_INCREMENT == game.cars.ptr[i].speed) game.cars.ptr[i].y -= SPEED_INCREMENT;
-		if (player_car.speed + 2*SPEED_INCREMENT == game.cars.ptr[i].speed) game.cars.ptr[i].y -= 2*SPEED_INCREMENT;
-		if (player_car.speed + 3*SPEED_INCREMENT == game.cars.ptr[i].speed) game.cars.ptr[i].y -= 3*SPEED_INCREMENT;
-		if (player_car.speed + 4*SPEED_INCREMENT == game.cars.ptr[i].speed) game.cars.ptr[i].y -= 4*SPEED_INCREMENT;
-		
+		if (player_car.speed + 2 * SPEED_INCREMENT == game.cars.ptr[i].speed) game.cars.ptr[i].y -= 2 * SPEED_INCREMENT;
+		if (player_car.speed + 3 * SPEED_INCREMENT == game.cars.ptr[i].speed) game.cars.ptr[i].y -= 3 * SPEED_INCREMENT;
+		if (player_car.speed + 4 * SPEED_INCREMENT == game.cars.ptr[i].speed) game.cars.ptr[i].y -= 4 * SPEED_INCREMENT;
+
 		//player bumping to cars
 		if (player_car.y - CAR_HEIGTH < game.cars.ptr[i].y && player_car.y > game.cars.ptr[i].y && player_car.x + CAR_WIDTH >= game.cars.ptr[i].x && player_car.x <= game.cars.ptr[i].x + CAR_WIDTH) {
 			destroy_car(player_car, game, time);
+			car_vector_delete(&game.cars, i);
 		}
 
 		//other cars bumping to each other
@@ -282,7 +268,7 @@ void manage_cars_position(game_t& game, car_t& player_car, game_time_t& time) {
 			if (k == i) continue;
 			if (game.cars.ptr[i].y - CAR_HEIGTH < game.cars.ptr[k].y && game.cars.ptr[i].y > game.cars.ptr[k].y && game.cars.ptr[i].x + CAR_WIDTH >= game.cars.ptr[k].x && game.cars.ptr[i].x <= game.cars.ptr[k].x + CAR_WIDTH) {
 				game.cars.ptr[i].y += 30;
-				game.cars.ptr[i].speed -= SPEED_INCREMENT;
+				game.cars.ptr[k].speed += SPEED_INCREMENT;
 			}
 		}
 
@@ -290,7 +276,7 @@ void manage_cars_position(game_t& game, car_t& player_car, game_time_t& time) {
 		for (int k = 0; k < game.bullets.count; k++) {
 			if (game.bullets.ptr[k].y - CAR_HEIGTH < game.cars.ptr[i].y && game.bullets.ptr[k].y > game.cars.ptr[i].y && game.bullets.ptr[k].x + CAR_WIDTH >= game.cars.ptr[i].x && game.bullets.ptr[k].x <= game.cars.ptr[i].x + CAR_WIDTH) {
 				//save time when car wash shoted
-				
+
 				if (game.cars.ptr[i].type == NORMAL) {
 					game.score.halted_at = SDL_GetTicks();
 				}
@@ -621,10 +607,7 @@ void pick_up_heart(game_t& game, car_t& player_car, heart_t& heart) {
 int generate_random_x_on_road(game_t* game) {
 
 	int road_width = SCREEN_WIDTH - 2 * game->grass.ptr[0].width;
-	int x = (rand() & road_width) + 1;
-	int left = x % CAR_MOVE_PIXELS;
-	x = x - left;
-	if (x > SCREEN_WIDTH / 2) x -= CAR_MOVE_PIXELS;
+	int x = (rand() & road_width) + 1 + game->grass.ptr[0].width;
 	return x;
 }
 
@@ -639,7 +622,8 @@ void generate_random_car(textures_t textures, game_t* game, car_t& player_car) {
 				car_t random_car;
 
 				int x = generate_random_x_on_road(game);
-				random_car.x = game->grass.ptr[0].width + x;
+				if (x > SCREEN_WIDTH / 2) x -= CAR_WIDTH;
+				random_car.x = x;
 				random_car.y = 0 - CAR_HEIGTH / 2;
 
 				int type = rand() % 2;
@@ -662,7 +646,8 @@ void generate_random_heart(heart_t& heart, game_time_t& time, game_t& game) {
 		int n = (rand() % 100) + 1;
 		if (n == 1) {
 			int x = generate_random_x_on_road(&game);
-			heart.x = game.grass.ptr[0].width + x;
+			if (x > SCREEN_WIDTH / 2) x -= HEART_WIDTH;
+			heart.x = x;
 			heart.y = 0;
 			heart.is_active = true;
 		}
@@ -992,19 +977,20 @@ void fire_bullet(game_t& game, car_t& player_car) {
 
 //handling input
 void events_handling(SDL_Event& event, car_t& car, game_t& game, game_time_t& time) {
+
+	const Uint8* state = SDL_GetKeyboardState(NULL);
+	if (state[SDL_SCANCODE_LEFT] && !game.which_menu.pause && car.on_fire == false && car.speed > 0) {
+		car.x -= CAR_MOVE_PIXELS;
+	}
+	if (state[SDL_SCANCODE_RIGHT] && !game.which_menu.pause && car.on_fire == false && car.speed > 0) {
+		car.x += CAR_MOVE_PIXELS;
+	}
+
 	while (SDL_PollEvent(&event))
 	{
 		switch (event.type) {
 		case SDL_KEYDOWN:
-			if (event.key.keysym.sym == SDLK_LEFT && !game.which_menu.pause && car.on_fire == false && car.speed > 0) {
-				if (car.x + CAR_MOVE_PIXELS > 0)
-					car.x -= CAR_MOVE_PIXELS;
-			}
-			else if (event.key.keysym.sym == SDLK_RIGHT && !game.which_menu.pause && car.on_fire == false && car.speed > 0) {
-				if (car.x + CAR_MOVE_PIXELS + CAR_WIDTH / 2 < SCREEN_WIDTH)
-					car.x += CAR_MOVE_PIXELS;
-			}
-			else if (event.key.keysym.sym == SDLK_ESCAPE) {
+			if (event.key.keysym.sym == SDLK_ESCAPE) {
 				game.which_menu.running = false;
 			}
 			else if (event.key.keysym.sym == SDLK_UP && !game.which_menu.pause && car.on_fire == false) {
@@ -1155,15 +1141,13 @@ void load_picked_save(SDL_Event& event, game_t& game, game_time_t& time, car_t& 
 void move_hostile_car_to_player(game_t& game, car_t& player_car) {
 	if (!player_car.on_fire) {
 		for (int i = 0; i < game.cars.count; i++) {
-			int n = (rand() % 50) + 1;
-			if (n == 1) {
-				if (game.cars.ptr[i].type == HOSTILE) {
-					if (game.cars.ptr[i].x > player_car.x) {
-						game.cars.ptr[i].x -= CAR_MOVE_PIXELS;
-					}
-					else if (game.cars.ptr[i].x < player_car.x) {
-						game.cars.ptr[i].x += CAR_MOVE_PIXELS;
-					}
+			if (game.grass.ptr[game.grass.count - 1].width == MIN_GRASS_WIDTH && game.cars.ptr[i].x < SCREEN_WIDTH / 2) continue;
+			if (game.cars.ptr[i].type == HOSTILE) {
+				if (game.cars.ptr[i].x > player_car.x) {
+					game.cars.ptr[i].x -= CAR_MOVE_PIXELS;
+				}
+				else if (game.cars.ptr[i].x < player_car.x) {
+					game.cars.ptr[i].x += CAR_MOVE_PIXELS;
 				}
 			}
 		}

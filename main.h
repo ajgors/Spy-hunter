@@ -16,7 +16,7 @@ using namespace std;
 #define CAR_Y (SCREEN_HEIGHT / 2) + (LEGEND_HEIGHT)
 #define ERROR 0
 #define SUCCESS 1
-#define CAR_MOVE_PIXELS 25
+#define CAR_MOVE_PIXELS 3
 #define IMPLEMENTED_WIDTH 105
 #define IMPLEMENTED_HEIGHT 20
 #define MAX_GRASS_WIDTH 8*GRASS_WIDTH
@@ -86,7 +86,6 @@ void generate_random_car(textures_t textures, game_t* game, car_t& player_car);
 void icrease_score(game_t& game, car_t& car);
 void scroll_grass(game_t& game, car_t& player_car);
 void remove_cars_outside_screen(game_t& game);
-void update_cars_speed(game_t& game);
 void render_cars(SDL_Renderer* renderer, textures_t& textures, game_t& game, car_t& player_car);
 void manage_cars_position(game_t& game, car_t& player_car, game_time_t& time);
 void render_bullet(SDL_Renderer* renderer, game_t& game, SDL_Texture* bullet_texture);
