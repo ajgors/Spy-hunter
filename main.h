@@ -35,7 +35,7 @@ using namespace std;
 #define SAVES_NUMBER 10
 #define BULLET_SPEED 7
 #define SPEED_INCREMENT 4
-#define MAX_SPEED 4 * SPEED_INCREMENT
+#define MAX_SPEED 3 * SPEED_INCREMENT
 #define START_SPEED 2 * SPEED_INCREMENT
 #define TEXT_CENTER screen->w / 2 - strlen(text) * 8 / 2
 #define GRASS_SPEED 4
@@ -46,6 +46,7 @@ using namespace std;
 #define LEGEND_X 0
 #define LEGEND_Y 0
 #define SAVES_Y 40
+#define HALT_TIME 3000 // in Miliseconds
 
 struct car_t;
 struct game_time_t;
@@ -55,10 +56,11 @@ struct textures_t;
 struct grass_t;
 struct bullet_t;
 struct colors_t;
+struct heart_t;
 
 
-void pick_up_heart(game_t& game, car_t& player_car);
-void generate_random_heart(game_t& game, game_time_t& time);
+void pick_up_heart(game_t& game, car_t& player_car, heart_t& heart);
+void generate_random_heart(heart_t& heart, game_time_t& time, game_t& game);
 void free_textures(textures_t& textures);
 void check_for_grass_colision(car_t& car, game_t& game, game_time_t& time);
 int init(SDL_Window*& window, SDL_Renderer*& renderer, SDL_Surface*& screen, SDL_Texture*& scrtex);
@@ -89,7 +91,7 @@ void render_cars(SDL_Renderer* renderer, textures_t& textures, game_t& game, car
 void manage_cars_position(game_t& game, car_t& player_car, game_time_t& time);
 void render_bullet(SDL_Renderer* renderer, game_t& game, SDL_Texture* bullet_texture);
 void render_fire(SDL_Renderer* renderer, car_t& player_car, SDL_Texture* fire);
-void render_heart(SDL_Renderer* renderer, game_t& game, SDL_Texture* heart, car_t& player_car);
+void render_heart(SDL_Renderer* renderer, heart_t& heart, SDL_Texture* heart_txt, car_t& player_car);
 void move_bullets(game_t& game);
 void init_colors(colors_t& colors, SDL_Surface* screen);
 void show_gameover_screen(SDL_Surface* screen, colors_t& colors, SDL_Surface* charset, SDL_Texture* scrtex, SDL_Renderer* renderer, game_t& game);
