@@ -448,6 +448,9 @@ void load_save(game_t& game, game_time_t& game_time, car_t& car, char file_name[
 	if (file == NULL) cout << "ERROR WHILE OPENING FILE";
 	else {
 
+		//load game struct
+
+		//laod grass
 		free(game.grass.ptr);
 		init_grass_vector(&game.grass);
 		int old_que_count = 0;
@@ -459,6 +462,7 @@ void load_save(game_t& game, game_time_t& game_time, car_t& car, char file_name[
 			grass_push_back(&game.grass, saved_grass);
 		}
 
+		//load grass que
 		free(game.grass_que.ptr);
 		init_vector(&game.grass_que);
 		old_que_count = 0;
@@ -470,6 +474,7 @@ void load_save(game_t& game, game_time_t& game_time, car_t& car, char file_name[
 			push_back(&game.grass_que, k);
 		}
 
+		//load cars
 		free(game.cars.ptr);
 		init_car_vector(&game.cars);
 		old_que_count = 0;
@@ -481,17 +486,41 @@ void load_save(game_t& game, game_time_t& game_time, car_t& car, char file_name[
 			car_push_back(&game.cars, saved_car);
 		}
 
+		//load bullets
+		free(game.bullets.ptr);
+		init_bullet_vector(&game.bullets);
+		old_que_count = 0;
+		fread(&old_que_count, sizeof(int), 1, file);
+
+		bullet_t saved_bullet;
+		for (int i = 0; i < old_que_count; i++) {
+			fread(&saved_bullet, sizeof(bullet_t), 1, file);
+			bullet_push_back(&game.bullets, saved_bullet);
+		}
+
+		
+
 		fread(&game.score, sizeof(game.score), 1, file);
 		fread(&game.grass_width_on_car_y, sizeof(game.grass_width_on_car_y), 1, file);
+		fread(&game.score_halt, sizeof(game.score_halt), 1, file);
+		fread(&game.traveled_distance, sizeof(game.traveled_distance), 1, file);
+		fread(&game.lives, sizeof(game.lives), 1, file);
+		fread(&game.fire, sizeof(game.fire), 1, file);
+		fread(&game.heart, sizeof(game.heart), 1, file);
+
+		
+		//load other structs
 		fread(&car, sizeof(car), 1, file);
 		fread(&game_time, sizeof(game_time), 1, file);
 		game_time.t1 = SDL_GetTicks();
+		cout << game_time.world_time << endl;
 		fclose(file);
 	}
 }
 
 
-void save_game(game_t& game, game_time_t& game_time, car_t& car) {
+
+void save_game(game_t& game, game_time_t& game_time, car_t& player_car) {
 	time_t rawtime;
 	struct tm* timeinfo;
 	char buffer[128];
@@ -503,25 +532,48 @@ void save_game(game_t& game, game_time_t& game_time, car_t& car) {
 	FILE* file = fopen(buffer, "w");
 	if (file == NULL) cout << "ERROR OPENING FILE" << endl;
 	else {
+
+		//save game struct
+
+		//grass vector
 		fwrite(&game.grass, sizeof(game.grass.count), 1, file);
 		for (int i = 0; i < game.grass.count; i++) {
 			fwrite(&game.grass.ptr[i], sizeof(game.grass.ptr[0]), 1, file);
 		}
 
+		//grass que vector
 		fwrite(&game.grass_que.count, sizeof(game.grass_que.count), 1, file);
 		for (int i = 0; i < game.grass_que.count; i++) {
 			fwrite(&game.grass_que.ptr[i], sizeof(int), 1, file);
 		}
 
+		//cars vector
 		fwrite(&game.cars.count, sizeof(game.cars.count), 1, file);
 		for (int i = 0; i < game.cars.count; i++) {
 			fwrite(&game.cars.ptr[i], sizeof(game.cars.ptr[0]), 1, file);
 		}
 
+		//bullets vector
+		fwrite(&game.bullets.count, sizeof(game.bullets.count), 1, file);
+		for (int i = 0; i < game.bullets.count; i++) {
+			fwrite(&game.bullets.ptr[i], sizeof(game.bullets.ptr[0]), 1, file);
+		}
+		
 		fwrite(&game.score, sizeof(game.score), 1, file);
 		fwrite(&game.grass_width_on_car_y, sizeof(game.grass_width_on_car_y), 1, file);
-		fwrite(&car, sizeof(car), 1, file);
+		fwrite(&game.score_halt, sizeof(game.score_halt), 1, file);
+		fwrite(&game.traveled_distance, sizeof(game.traveled_distance), 1, file);
+		fwrite(&game.lives, sizeof(game.lives), 1, file);
+		fwrite(&game.fire, sizeof(game.fire), 1, file);
+		fwrite(&game.heart, sizeof(game.heart), 1, file);
+
+		
+
+		//save other stucts
+		fwrite(&player_car, sizeof(player_car), 1, file);
 		fwrite(&game_time, sizeof(game_time), 1, file);
+		cout << game_time.world_time << endl; 
+		
 		fclose(file);
 	}
 }
