@@ -60,11 +60,18 @@ struct heart_t {
 	bool is_active = false;
 };
 
-typedef struct {
+struct score_t {
 	double points = 0;
-	int score_halt = 0;
+	int halted_at = 0;
 	int traveled_distance = 0;
-} score_t;
+};
+
+
+struct menus {
+	bool running = true;
+	bool pause = false;
+	bool save_screen = false;
+};
 
 struct game_t {
 	vector_t grass_que = { 0 };
@@ -72,12 +79,7 @@ struct game_t {
 	grass_vector_t grass = { 0 };
 	bullet_vector_t bullets = { 0 };
 	int grass_width_on_car_y = 0;
-	bool running = true;
-	bool pause = false;
-	bool save_screen = false;
-	//double score = 0;
-	//int score_halt = 0;
-	//int traveled_distance = 0;
+	menus which_menu;
 	score_t score = { 0 };
 	int lives = START_LIVES;
 };
@@ -97,12 +99,7 @@ struct colors_t {
 	int niebieski = 0;
 };
 
-//TO DO - naprawic save i load;
-//dodac chyba struct score z (points, halted i traveled distance)
 //zobaczyc wyœwietlanie save czy nie zatrudno zrobione
-
-
-
 
 
 int main(int argc, char* argv[]) {
@@ -149,15 +146,15 @@ int main(int argc, char* argv[]) {
 	init_colors(colors, screen);
 	generate_start_grass(game);
 
-	while (game.running) {
+	while (game.which_menu.running) {
 
-		if (game.save_screen) {
+		if (game.which_menu.save_screen) {
 			char saves[SAVES_NUMBER][128] = { 0 };
 			load_saves(saves);
 			show_saves_screen(screen, charset, scrtex, renderer, event, saves, colors);
 			load_picked_save(event, game, time, player_car, saves);
 		}
-		else if (game.pause) {
+		else if (game.which_menu.pause) {
 			show_pause_screen(screen, colors, charset, scrtex, renderer);
 		}
 		else if (game.lives == 0) {
@@ -295,7 +292,7 @@ void manage_cars_position(game_t& game, car_t& player_car, game_time_t& time) {
 				//save time when car wash shoted
 				
 				if (game.cars.ptr[i].type == NORMAL) {
-					game.score.score_halt = SDL_GetTicks();
+					game.score.halted_at = SDL_GetTicks();
 				}
 				else if (game.cars.ptr[i].type == HOSTILE) {
 					game.score.points += 100;
@@ -339,8 +336,8 @@ void icrease_score(game_t& game, car_t& car) {
 		game.score.traveled_distance -= SCREEN_HEIGHT;
 
 		//return if score is halted
-		if (SDL_GetTicks() - game.score.score_halt < HALT_TIME && game.score.score_halt > 0) return;
-		game.score.score_halt = 0;
+		if (SDL_GetTicks() - game.score.halted_at < HALT_TIME && game.score.halted_at > 0) return;
+		game.score.halted_at = 0;
 		game.score.points += 50;
 	}
 }
@@ -732,7 +729,7 @@ void respawn_car(car_t& player_car, game_t& game) {
 	if (SDL_GetTicks() - player_car.crashed_at >= CAR_RESPAWN_TIME) {
 
 		if (game.grass_width_on_car_y == MIN_GRASS_WIDTH) {
-			player_car.x = CAR_X + CAR_WIDTH;
+			player_car.x = CAR_X + CAR_MOVE_PIXELS;
 		}
 		else {
 			player_car.x = CAR_X;
@@ -999,34 +996,34 @@ void events_handling(SDL_Event& event, car_t& car, game_t& game, game_time_t& ti
 	{
 		switch (event.type) {
 		case SDL_KEYDOWN:
-			if (event.key.keysym.sym == SDLK_LEFT && !game.pause && car.on_fire == false && car.speed > 0) {
+			if (event.key.keysym.sym == SDLK_LEFT && !game.which_menu.pause && car.on_fire == false && car.speed > 0) {
 				if (car.x + CAR_MOVE_PIXELS > 0)
 					car.x -= CAR_MOVE_PIXELS;
 			}
-			else if (event.key.keysym.sym == SDLK_RIGHT && !game.pause && car.on_fire == false && car.speed > 0) {
+			else if (event.key.keysym.sym == SDLK_RIGHT && !game.which_menu.pause && car.on_fire == false && car.speed > 0) {
 				if (car.x + CAR_MOVE_PIXELS + CAR_WIDTH / 2 < SCREEN_WIDTH)
 					car.x += CAR_MOVE_PIXELS;
 			}
 			else if (event.key.keysym.sym == SDLK_ESCAPE) {
-				game.running = false;
+				game.which_menu.running = false;
 			}
-			else if (event.key.keysym.sym == SDLK_UP && !game.pause && car.on_fire == false) {
+			else if (event.key.keysym.sym == SDLK_UP && !game.which_menu.pause && car.on_fire == false) {
 
 				if (car.speed + SPEED_INCREMENT <= MAX_SPEED)
 					car.speed += SPEED_INCREMENT;
 			}
-			else if (event.key.keysym.sym == SDLK_DOWN && !game.pause && car.on_fire == false) {
+			else if (event.key.keysym.sym == SDLK_DOWN && !game.which_menu.pause && car.on_fire == false) {
 				if (car.speed - SPEED_INCREMENT >= 0)
 					car.speed -= SPEED_INCREMENT;
 			}
 			else if (event.key.keysym.sym == SDLK_n) restart_game(game, time, car);
 			else if (event.key.keysym.sym == SDLK_p) stop_game(car, time, game);
 			else if (event.key.keysym.sym == SDLK_s) save_game(game, time, car);
-			else if (event.key.keysym.sym == SDLK_l) game.save_screen = true;
+			else if (event.key.keysym.sym == SDLK_l) game.which_menu.save_screen = true;
 			else if (event.key.keysym.sym == SDLK_SPACE) fire_bullet(game, car);
 			break;
 		case SDL_QUIT:
-			game.running = false;
+			game.which_menu.running = false;
 			break;
 		}
 	}
@@ -1034,7 +1031,7 @@ void events_handling(SDL_Event& event, car_t& car, game_t& game, game_time_t& ti
 
 
 void stop_game(car_t& car, game_time_t& time, game_t& game) {
-	game.pause == false ? game.pause = true : game.pause = false;
+	game.which_menu.pause == false ? game.which_menu.pause = true : game.which_menu.pause = false;
 	time.t1 = SDL_GetTicks();
 }
 
@@ -1149,7 +1146,7 @@ void load_picked_save(SDL_Event& event, game_t& game, game_time_t& time, car_t& 
 	int save_number = event.key.keysym.sym - '0' - 1;
 	if (save_number >= 0 && save_number < SAVES_NUMBER) {
 		load_save(game, time, player_car, saves[save_number]);
-		game.save_screen = false;
+		game.which_menu.save_screen = false;
 	}
 }
 
