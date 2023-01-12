@@ -76,7 +76,7 @@ void render_grass(game_t& game, SDL_Renderer* renderer, SDL_Texture* roadTexture
 void render_implemented(SDL_Surface* screen, SDL_Surface* charset, SDL_Texture* scrtex, SDL_Renderer* renderer, colors_t& colors);
 void stop_game(car_t& car, game_time_t& time, game_t& game);
 SDL_Texture* load_texture(char s[], SDL_Renderer* renderer);
-void load_saves(char saves[10][128]);
+void load_saves(char saves[SAVES_NUMBER][128]);
 void show_saves_screen(SDL_Surface* screen, SDL_Surface* charset, SDL_Texture* scrtex, SDL_Renderer* renderer, SDL_Event& event, char saves[10][128], colors_t& colors);
 void load_save(game_t& game, game_time_t& game_time, car_t& car, char file_name[]);
 void DrawString(SDL_Surface* screen, int x, int y, const char* text, SDL_Surface* charset);
@@ -88,7 +88,7 @@ void update_cars_speed(game_t& game);
 void render_cars(SDL_Renderer* renderer, textures_t& textures, game_t& game, car_t& player_car);
 void manage_cars_position(game_t& game, car_t& player_car, game_time_t& time);
 void render_bullet(SDL_Renderer* renderer, game_t& game, SDL_Texture* bullet_texture);
-void render_fire(SDL_Renderer* renderer, game_t& game, SDL_Texture* fire);
+void render_fire(SDL_Renderer* renderer, car_t& player_car, SDL_Texture* fire);
 void render_heart(SDL_Renderer* renderer, game_t& game, SDL_Texture* heart, car_t& player_car);
 void move_bullets(game_t& game);
 void init_colors(colors_t& colors, SDL_Surface* screen);
@@ -96,3 +96,4 @@ void show_gameover_screen(SDL_Surface* screen, colors_t& colors, SDL_Surface* ch
 void show_pause_screen(SDL_Surface* screen, colors_t& colors, SDL_Surface* charset, SDL_Texture* scrtex, SDL_Renderer* renderer);
 void load_picked_save(SDL_Event& event, game_t& game, game_time_t& time, car_t& player_car, char  saves[10][128]);
 void move_hostile_car_to_player(game_t& game, car_t& player_car);
+void destroy_car(car_t& player_car, game_t& game, game_time_t& time);

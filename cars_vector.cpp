@@ -8,9 +8,9 @@ struct car_t {
     int x;
     int y;
     int speed;
-    bool in_grass;
-    int time;
+    int crashed_at;
     int type;
+    bool on_fire;
 };
 //Struktura opisuj¹ca wektor liczb ca³kowitych.
 //j-ta komórka wektora w (0 <= j < w.count) jest dostêpna jest jako w.ptr[j].
