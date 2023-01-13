@@ -5,9 +5,9 @@
 
 
 struct bullet_t {
-    int y = CAR_Y;
-    int x = CAR_X;
-    int time = 0;
+    int y;
+    int x;
+    int fired_time;
 };
 
 //Struktura opisuj¹ca wektor liczb ca³kowitych.
