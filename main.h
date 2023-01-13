@@ -4,51 +4,63 @@
 using namespace std;
 
 
-#define SCREEN_WIDTH 650
-#define SCREEN_HEIGHT 480
-#define FPS 60
-#define LEGEND_HEIGHT 50
-#define GRASS_HEIGHT 32
-#define GRASS_WIDTH 25
-#define CAR_HEIGTH 74
-#define CAR_WIDTH 36
-#define CAR_X (SCREEN_WIDTH / 2) - (CAR_WIDTH / 2)
-#define CAR_Y (SCREEN_HEIGHT / 2) + (LEGEND_HEIGHT)
-#define ERROR 0
-#define SUCCESS 1
-#define CAR_MOVE_PIXELS 3
+//width and height constants
 #define IMPLEMENTED_WIDTH 105
 #define IMPLEMENTED_HEIGHT 20
 #define MAX_GRASS_WIDTH 8*GRASS_WIDTH
 #define MIN_GRASS_WIDTH GRASS_WIDTH
 #define NUMBER_OF_GRASS_TXT (SCREEN_HEIGHT / GRASS_HEIGHT)
-#define CARS_NUMBER 10
-#define START_LIVES 3
 #define FIRE_WIDTH 100
 #define FIRE_HEIGTH 100
 #define ITEM_WIDTH 20
 #define ITEM_HEIGTH 20
 #define BULLET_WIDTH 1
 #define BULLET_HEIGTH 10
+#define LEGEND_HEIGHT 50
+#define GRASS_HEIGHT 32
+#define GRASS_WIDTH 25
+#define CAR_HEIGTH 74
+#define CAR_WIDTH 36
+#define SCREEN_WIDTH 650
+#define SCREEN_HEIGHT 480
+//time constants
 #define CAR_RESPAWN_TIME 1500	// in Miliseconds
-#define INF_LIVES_TIME 0		// in Seconds
+#define INF_LIVES_TIME 60		// in Seconds
+#define HALT_TIME 3000			// in Miliseconds
+#define POWER_UP_TIME 10000		// in Miliseconds
+#define BULLET_DELAY 500		// in Miliseconds
+//coordinates constants
+#define CAR_X (SCREEN_WIDTH / 2) - (CAR_WIDTH / 2)
+#define CAR_Y (SCREEN_HEIGHT / 2) + (LEGEND_HEIGHT)
+#define LEGEND_X 0
+#define LEGEND_Y 0
+#define SAVES_Y 40
+#define PAUSE_SCREEN_Y 50
+#define LIST_SCREEN_Y 34
+#define NEXT_LINE_Y 16
+#define GAME_OVER_Y 50
+#define OUT_OF_SCREEN -1
+#define TEXT_CENTER screen->w / 2 - strlen(text) * 8 / 2
+//probability constants
+#define ITEM_PROB 1000
+#define CAR_PROB 300
+//additional constants
+#define FPS 60
+#define ERROR 0
+#define SUCCESS 1
+#define CAR_MOVE_PIXELS 3
+#define CARS_NUMBER 10
+#define START_LIVES 3
 #define SAVES_NUMBER 10
 #define BULLET_SPEED 7
 #define SPEED_INCREMENT 1
 #define MAX_SPEED 12
 #define START_SPEED 4
-#define TEXT_CENTER screen->w / 2 - strlen(text) * 8 / 2
 #define GRASS_SPEED 4
-#define MAX_CARS 4
-#define OUT_OF_SCREEN -1
+#define MAX_CARS 6
 #define NORMAL 0
 #define HOSTILE 1
-#define LEGEND_X 0
-#define LEGEND_Y 0
-#define SAVES_Y 40
-#define HALT_TIME 3000 // in Miliseconds
-#define SAVE_FILE "save.txt"
-#define POWER_UP_TIME 10000 // in Miliseconds
+#define SAVE_FILE "scores.txt"
 
 struct car_t;
 struct game_time_t;
@@ -62,7 +74,6 @@ struct item_t;
 struct scores_t;
 
 bool pick_up_item(car_t& player_car, item_t& item);
-void generate_random_heart(item_t& item, game_time_t& time, game_t& game);
 void free_textures(textures_t& textures);
 void check_for_grass_colision(car_t& player_car, game_t& game, game_time_t& time);
 int init(SDL_Window*& window, SDL_Renderer*& renderer, SDL_Surface*& screen, SDL_Texture*& scrtex);
@@ -111,3 +122,4 @@ void pick_up_heart(game_t& game, car_t& player_car);
 void generate_random_item(item_t& item, game_time_t& time, game_t& game);
 void calculate_power_up_time_left(game_t& game);
 void generate_random_power_up(item_t& power_up, game_time_t& time, game_t& game);
+void generate_random_heart(item_t& heart, game_time_t& time, game_t& game);
