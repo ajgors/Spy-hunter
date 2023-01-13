@@ -61,7 +61,7 @@ struct colors_t;
 struct item_t;
 struct scores_t;
 
-bool pick_up_item(game_t& game, car_t& player_car, item_t& item);
+bool pick_up_item(car_t& player_car, item_t& item);
 void generate_random_heart(item_t& item, game_time_t& time, game_t& game);
 void free_textures(textures_t& textures);
 void check_for_grass_colision(car_t& player_car, game_t& game, game_time_t& time);
@@ -106,8 +106,8 @@ void show_list_screen(SDL_Surface* screen, colors_t& colors, SDL_Surface* charse
 void load_scores_list(scores_t& saved_scores);
 void save_score(game_t& game, game_time_t& time, scores_t& saved_scores);
 int load_scores_size();
-void pick_up_power_up(game_t& game, car_t& player_car, item_t& power_up);
-void pick_up_heart(game_t& game, car_t& player_car, item_t& heart);
+void pick_up_power_up(game_t& game, car_t& player_car);
+void pick_up_heart(game_t& game, car_t& player_car);
 void generate_random_item(item_t& item, game_time_t& time, game_t& game);
-int calculate_power_up_time_left(game_t& game);
+void calculate_power_up_time_left(game_t& game);
 void generate_random_power_up(item_t& power_up, game_time_t& time, game_t& game);

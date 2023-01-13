@@ -1,7 +1,7 @@
-#define _USE_MATH_DEFINES
 #define _CRT_SECURE_NO_WARNINGS
+
+#include <stdio.h>
 #include<math.h>
-#include<stdio.h>
 #include<string.h>
 #include "main.h"
 #include <ctime>
@@ -58,8 +58,7 @@ struct item_t {
 	int y = 0;
 	int x = 0;
 	bool is_visible = false;
-	int	act_time = 0;
-	bool is_picked = false;
+	int	activation_time = 0;
 	int time_left = 0;
 };
 
@@ -190,8 +189,8 @@ int main(int argc, char* argv[]) {
 			render_fire(renderer, player_car, textures.fire);
 			render_item(renderer, game.heart, textures.heart, player_car);
 			render_item(renderer, game.power_up, textures.fire, player_car);
-			pick_up_heart(game, player_car, game.heart);
-			pick_up_power_up(game, player_car, game.power_up);
+			pick_up_heart(game, player_car);
+			pick_up_power_up(game, player_car);
 			render_cars(renderer, textures, game, player_car);
 			manage_cars_position(game, player_car, time);
 			icrease_score(game, player_car);
@@ -271,7 +270,7 @@ void manage_cars_position(game_t& game, car_t& player_car, game_time_t& time) {
 		//player bumping to other cars
 		if (player_car.y - CAR_HEIGTH < game.cars.ptr[i].y && player_car.y > game.cars.ptr[i].y && player_car.x + CAR_WIDTH >= game.cars.ptr[i].x && player_car.x <= game.cars.ptr[i].x + CAR_WIDTH) {
 
-			if (!game.power_up.is_picked) {
+			if (game.power_up.time_left == 0) {
 				destroy_car(player_car, game, time);
 			}
 
@@ -528,7 +527,8 @@ void load_save(game_t& game, game_time_t& game_time, car_t& car, char file_name[
 		fread(&game.score, sizeof(game.score), 1, file);
 		fread(&game.grass_width_on_car_y, sizeof(game.grass_width_on_car_y), 1, file);
 		fread(&game.lives, sizeof(game.lives), 1, file);
-
+		fread(&game.heart, sizeof(game.heart), 1, file);
+		fread(&game.power_up, sizeof(game.power_up), 1, file);
 
 		//load other structs
 		fread(&car, sizeof(car), 1, file);
@@ -582,7 +582,8 @@ void save_game(game_t& game, game_time_t& game_time, car_t& player_car) {
 		fwrite(&game.score, sizeof(game.score), 1, file);
 		fwrite(&game.grass_width_on_car_y, sizeof(game.grass_width_on_car_y), 1, file);
 		fwrite(&game.lives, sizeof(game.lives), 1, file);
-
+		fwrite(&game.heart, sizeof(game.heart), 1, file);
+		fwrite(&game.power_up, sizeof(game.power_up), 1, file);
 
 		//save other stucts
 		fwrite(&player_car, sizeof(player_car), 1, file);
@@ -593,7 +594,7 @@ void save_game(game_t& game, game_time_t& game_time, car_t& player_car) {
 }
 
 
-bool pick_up_item(game_t& game, car_t& player_car, item_t& item) {
+bool pick_up_item(car_t& player_car, item_t& item) {
 	int left_item, rigth_item, top_item, bottom_item;
 	int left_car, rigth_car, top_car, bottom_car;
 
@@ -619,30 +620,30 @@ bool pick_up_item(game_t& game, car_t& player_car, item_t& item) {
 }
 
 
-void pick_up_heart(game_t& game, car_t& player_car, item_t& heart) {
-	game.heart.is_picked = pick_up_item(game, player_car, heart);
+void pick_up_heart(game_t& game, car_t& player_car) {
+	bool is_picked = pick_up_item(player_car, game.heart);
 
-	if (game.heart.is_picked) {
+	if (is_picked) {
 		game.lives++;
-		heart.y = 0;
-		heart.x = 0;
-		heart.is_visible = false;
+		game.heart.y = 0;
+		game.heart.x = 0;
+		game.heart.is_visible = false;
 	}
 }
 
 
-void pick_up_power_up(game_t& game, car_t& player_car, item_t& power_up) {
-	game.power_up.is_picked = pick_up_item(game, player_car, power_up);
-
-	if (game.power_up.is_picked) {
-		power_up.act_time = SDL_GetTicks();
-		power_up.y = 0;
-		power_up.x = 0;
-		power_up.is_visible = false;
+void pick_up_power_up(game_t& game, car_t& player_car) {
+	bool is_picked = pick_up_item(player_car, game.power_up);
+	
+	if (is_picked) {
+		game.power_up.activation_time = SDL_GetTicks();
+		game.power_up.y = 0;
+		game.power_up.x = 0;
+		game.power_up.is_visible = false;
+		game.power_up.time_left = POWER_UP_TIME;
 	}
-	power_up.time_left = calculate_power_up_time_left(game);
-
-	if (power_up.time_left == 0) power_up.is_picked = false;
+	if(game.power_up.time_left > 0) calculate_power_up_time_left(game);
+	else game.power_up.time_left = 0;
 }
 
 
@@ -707,8 +708,8 @@ void generate_random_item(item_t& item, game_time_t& time, game_t& game) {
 }
 
 void generate_random_power_up(item_t& power_up, game_time_t& time, game_t& game) {
-	
-	if (!game.power_up.is_picked) {
+
+	if (power_up.time_left == 0) {
 		generate_random_item(power_up, time, game);
 	}
 }
@@ -986,8 +987,8 @@ void cap_fps(fps_t& game_fps, car_t& car) {
 	}
 }
 
-int calculate_power_up_time_left(game_t &game) {
-	return (POWER_UP_TIME - (SDL_GetTicks() - game.power_up.act_time)) / 1000;
+void calculate_power_up_time_left(game_t& game) {
+	game.power_up.time_left = (POWER_UP_TIME - (SDL_GetTicks() - game.power_up.activation_time)) / 1000;
 }
 
 //renders legend containins game informations
@@ -1001,17 +1002,17 @@ void render_legend(SDL_Surface* screen, SDL_Surface* charset, game_time_t& time,
 
 	if (time.world_time >= INF_LIVES_TIME) {
 		sprintf(text, "Time = %.1lf s  score: %.0lf  lives: %d, car speed: %.1lf", time.world_time, game.score.points, game.lives, player_car.speed);
-		
+
 	}
 	else {
 		sprintf(text, "Time = %.1lf s  score: %.0lf  lives: unlimited for %ds (%d), car speed: %.1lf", time.world_time, game.score.points, INF_LIVES_TIME, game.lives, player_car.speed);
 	}
-	
-	//calculate and show power up time
-	if (game.power_up.is_picked) {
+
+	//show power up time left
+	if (game.power_up.time_left > 0) {
 		sprintf(text + strlen(text), " Power up time left: %d s", game.power_up.time_left);
 	}
-	
+
 	DrawString(screen, TEXT_CENTER, LEGEND_Y + 20, text, charset);
 
 	sprintf(text, "Esc - wyjscie, \030 - przyspieszenie, \031 - zwolnienie, n - nowa gra");
@@ -1298,7 +1299,7 @@ void save_score(game_t& game, game_time_t& time, scores_t& saved_scores) {
 	if (file == NULL) cout << "ERROR WHILE OPENING FILE";
 	else {
 		fseek(file, 0, SEEK_SET);
-		fprintf(file, "%d\n", saved_scores.total_saves);
+		fprintf(file, "%d", saved_scores.total_saves);
 		fseek(file, 0, SEEK_END);
 		fprintf(file, "%.lf\n%.lf\n", game.score.points, time.world_time);
 		fclose(file);
@@ -1321,11 +1322,15 @@ void load_scores_list(scores_t& saved_scores) {
 	file = fopen(SAVE_FILE, "r+");
 	int size = load_scores_size();
 	saved_scores.scores = (final_score_t*)malloc(size * sizeof(final_score_t));
-	if (file == NULL) cout << "ERROR WHILE OPENING FILE";
+
+	if (file == NULL) {
+		cout << "ERROR WHILE OPENING FILE";
+		return;
+	}
 	else {
 		saved_scores.total_saves = size;
 		fseek(file, 1, SEEK_SET);
-		if (saved_scores.scores != NULL) {
+		if (saved_scores.scores) {
 			for (int i = 0; i < size; i++) {
 				final_score_t final_score = { 0 };
 				fscanf(file, "%lf", &final_score.points);
