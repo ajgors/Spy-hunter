@@ -7,7 +7,7 @@
 struct car_t {
     int x;
     int y;
-    int speed;
+    double speed;
     int crashed_at;
     int type;
     bool on_fire;

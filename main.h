@@ -31,15 +31,15 @@ using namespace std;
 #define BULLET_WIDTH 1
 #define BULLET_HEIGTH 10
 #define CAR_RESPAWN_TIME 1500	// in Miliseconds
-#define INF_LIVES_TIME 1		// in Seconds
+#define INF_LIVES_TIME 60		// in Seconds
 #define SAVES_NUMBER 10
 #define BULLET_SPEED 7
-#define SPEED_INCREMENT 4
-#define MAX_SPEED 3 * SPEED_INCREMENT
-#define START_SPEED 2 * SPEED_INCREMENT
+#define SPEED_INCREMENT 1
+#define MAX_SPEED 12
+#define START_SPEED 4
 #define TEXT_CENTER screen->w / 2 - strlen(text) * 8 / 2
 #define GRASS_SPEED 4
-#define MAX_CARS 14
+#define MAX_CARS 4
 #define OUT_OF_SCREEN -1
 #define NORMAL 0
 #define HOSTILE 1
@@ -47,6 +47,7 @@ using namespace std;
 #define LEGEND_Y 0
 #define SAVES_Y 40
 #define HALT_TIME 3000 // in Miliseconds
+#define SAVE_FILE "save.txt"
 
 struct car_t;
 struct game_time_t;
@@ -68,8 +69,8 @@ void free_memory(SDL_Surface* screen, SDL_Texture* scrtex, SDL_Renderer* rendere
 void load_charset(SDL_Surface*& charset);
 void render_car(car_t& car, SDL_Renderer* renderer, SDL_Texture* carTexture);
 void events_handling(SDL_Event& event, car_t& car, game_t& game, game_time_t& time, scores_t& saved_scores);
-	void calculate_time(game_time_t& time);
-void render_legend(SDL_Surface* screen, SDL_Surface* charset, game_time_t& time, fps_t& game_fps, SDL_Renderer* renderer, SDL_Texture* scrtex, game_t game, colors_t& colors);
+void calculate_time(game_time_t& time);
+void render_legend(SDL_Surface* screen, SDL_Surface* charset, game_time_t& time, fps_t& game_fps, SDL_Renderer* renderer, SDL_Texture* scrtex, game_t game, colors_t& colors, car_t& player_car);
 void cap_fps(fps_t& game_fps, car_t& car);
 void generate_grass_que(game_t& game);
 void generate_start_grass(game_t& game);
@@ -98,3 +99,9 @@ void show_pause_screen(SDL_Surface* screen, colors_t& colors, SDL_Surface* chars
 void load_picked_save(SDL_Event& event, game_t& game, game_time_t& time, car_t& player_car, char  saves[10][128]);
 void move_hostile_car_to_player(game_t& game, car_t& player_car);
 void destroy_car(car_t& player_car, game_t& game, game_time_t& time);
+void sort_by_points(scores_t& saved_scores);
+void sort_by_time(scores_t& saved_scores);
+void show_list_screen(SDL_Surface* screen, colors_t& colors, SDL_Surface* charset, SDL_Texture* scrtex, SDL_Renderer* renderer, scores_t& saved_scores, game_t& game);
+void load_scores_list(scores_t& saved_scores);
+void save_score(game_t& game, game_time_t& time, scores_t& saved_scores);
+int load_scores_size();
