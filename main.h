@@ -26,12 +26,12 @@ using namespace std;
 #define START_LIVES 3
 #define FIRE_WIDTH 100
 #define FIRE_HEIGTH 100
-#define HEART_WIDTH 20
-#define HEART_HEIGTH 20
+#define ITEM_WIDTH 20
+#define ITEM_HEIGTH 20
 #define BULLET_WIDTH 1
 #define BULLET_HEIGTH 10
 #define CAR_RESPAWN_TIME 1500	// in Miliseconds
-#define INF_LIVES_TIME 60		// in Seconds
+#define INF_LIVES_TIME 0		// in Seconds
 #define SAVES_NUMBER 10
 #define BULLET_SPEED 7
 #define SPEED_INCREMENT 1
@@ -48,6 +48,7 @@ using namespace std;
 #define SAVES_Y 40
 #define HALT_TIME 3000 // in Miliseconds
 #define SAVE_FILE "save.txt"
+#define POWER_UP_TIME 10000 // in Miliseconds
 
 struct car_t;
 struct game_time_t;
@@ -57,13 +58,13 @@ struct textures_t;
 struct grass_t;
 struct bullet_t;
 struct colors_t;
-struct heart_t;
+struct item_t;
 struct scores_t;
 
-void pick_up_heart(game_t& game, car_t& player_car, heart_t& heart);
-void generate_random_heart(heart_t& heart, game_time_t& time, game_t& game);
+bool pick_up_item(game_t& game, car_t& player_car, item_t& item);
+void generate_random_heart(item_t& item, game_time_t& time, game_t& game);
 void free_textures(textures_t& textures);
-void check_for_grass_colision(car_t& car, game_t& game, game_time_t& time);
+void check_for_grass_colision(car_t& player_car, game_t& game, game_time_t& time);
 int init(SDL_Window*& window, SDL_Renderer*& renderer, SDL_Surface*& screen, SDL_Texture*& scrtex);
 void free_memory(SDL_Surface* screen, SDL_Texture* scrtex, SDL_Renderer* renderer, SDL_Window* window);
 void load_charset(SDL_Surface*& charset);
@@ -91,7 +92,7 @@ void render_cars(SDL_Renderer* renderer, textures_t& textures, game_t& game, car
 void manage_cars_position(game_t& game, car_t& player_car, game_time_t& time);
 void render_bullet(SDL_Renderer* renderer, game_t& game, SDL_Texture* bullet_texture);
 void render_fire(SDL_Renderer* renderer, car_t& player_car, SDL_Texture* fire);
-void render_heart(SDL_Renderer* renderer, heart_t& heart, SDL_Texture* heart_txt, car_t& player_car);
+void render_item(SDL_Renderer* renderer, item_t& item, SDL_Texture* heart_txt, car_t& player_car);
 void move_bullets(game_t& game);
 void init_colors(colors_t& colors, SDL_Surface* screen);
 void show_gameover_screen(SDL_Surface* screen, colors_t& colors, SDL_Surface* charset, SDL_Texture* scrtex, SDL_Renderer* renderer, game_t& game);
@@ -105,3 +106,8 @@ void show_list_screen(SDL_Surface* screen, colors_t& colors, SDL_Surface* charse
 void load_scores_list(scores_t& saved_scores);
 void save_score(game_t& game, game_time_t& time, scores_t& saved_scores);
 int load_scores_size();
+void pick_up_power_up(game_t& game, car_t& player_car, item_t& power_up);
+void pick_up_heart(game_t& game, car_t& player_car, item_t& heart);
+void generate_random_item(item_t& item, game_time_t& time, game_t& game);
+int calculate_power_up_time_left(game_t& game);
+void generate_random_power_up(item_t& power_up, game_time_t& time, game_t& game);

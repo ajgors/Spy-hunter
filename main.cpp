@@ -54,10 +54,13 @@ struct bullet_t {
 	int fired_time = 0;
 };
 
-struct heart_t {
+struct item_t {
 	int y = 0;
 	int x = 0;
-	bool is_active = false;
+	bool is_visible = false;
+	int	act_time = 0;
+	bool is_picked = false;
+	int time_left = 0;
 };
 
 struct score_t {
@@ -94,6 +97,8 @@ struct game_t {
 	menus which_menu;
 	score_t score = { 0 };
 	int lives = START_LIVES;
+	item_t heart;
+	item_t power_up;
 };
 
 struct textures_t {
@@ -125,7 +130,6 @@ int main(int argc, char* argv[]) {
 	fps_t game_fps;
 	game_t game;
 	colors_t colors;
-	heart_t heart;
 	scores_t saved_scores;
 
 	init_car_vector(&game.cars);
@@ -177,14 +181,17 @@ int main(int argc, char* argv[]) {
 			generate_grass_que(game);
 			calculate_time(time);
 			generate_random_car(textures, &game, player_car);
-			generate_random_heart(heart, time, game);
-			pick_up_heart(game, player_car, heart);
+			generate_random_heart(game.heart, time, game);
+			generate_random_power_up(game.power_up, time, game);
 			move_hostile_car_to_player(game, player_car);
 			render_grass(game, renderer, textures.grass, player_car);
 			render_implemented(screen, charset, scrtex, renderer, colors);
 			check_for_grass_colision(player_car, game, time);
 			render_fire(renderer, player_car, textures.fire);
-			render_heart(renderer, heart, textures.heart, player_car);
+			render_item(renderer, game.heart, textures.heart, player_car);
+			render_item(renderer, game.power_up, textures.fire, player_car);
+			pick_up_heart(game, player_car, game.heart);
+			pick_up_power_up(game, player_car, game.power_up);
 			render_cars(renderer, textures, game, player_car);
 			manage_cars_position(game, player_car, time);
 			icrease_score(game, player_car);
@@ -263,7 +270,11 @@ void manage_cars_position(game_t& game, car_t& player_car, game_time_t& time) {
 
 		//player bumping to other cars
 		if (player_car.y - CAR_HEIGTH < game.cars.ptr[i].y && player_car.y > game.cars.ptr[i].y && player_car.x + CAR_WIDTH >= game.cars.ptr[i].x && player_car.x <= game.cars.ptr[i].x + CAR_WIDTH) {
-			destroy_car(player_car, game, time);
+
+			if (!game.power_up.is_picked) {
+				destroy_car(player_car, game, time);
+			}
+
 			car_vector_delete(&game.cars, i);
 		}
 
@@ -291,14 +302,14 @@ void manage_cars_position(game_t& game, car_t& player_car, game_time_t& time) {
 				bullet_vector_delete(&game.bullets, k);
 			}
 		}
-		
+
 		remove_cars_outside_screen(game);
 	}
 }
 
 
 void scroll_grass(game_t& game, car_t& player_car) {
-	
+
 	//update grass Y according to player speed
 	for (int i = 0; i < game.grass.count; i++) {
 		game.grass.ptr[i].y += player_car.speed;
@@ -529,7 +540,7 @@ void load_save(game_t& game, game_time_t& game_time, car_t& car, char file_name[
 
 
 void save_game(game_t& game, game_time_t& game_time, car_t& player_car) {
-	
+
 	time_t rawtime;
 	struct tm* timeinfo;
 	char buffer[128];
@@ -582,14 +593,14 @@ void save_game(game_t& game, game_time_t& game_time, car_t& player_car) {
 }
 
 
-void pick_up_heart(game_t& game, car_t& player_car, heart_t& heart) {
-	int left_heart, rigth_heart, top_heart, bottom_heart;
+bool pick_up_item(game_t& game, car_t& player_car, item_t& item) {
+	int left_item, rigth_item, top_item, bottom_item;
 	int left_car, rigth_car, top_car, bottom_car;
 
-	left_heart = heart.x;
-	rigth_heart = heart.x + HEART_WIDTH;
-	top_heart = heart.y;
-	bottom_heart = heart.y + HEART_HEIGTH;
+	left_item = item.x;
+	rigth_item = item.x + ITEM_WIDTH;
+	top_item = item.y;
+	bottom_item = item.y + ITEM_HEIGTH;
 
 	left_car = player_car.x;
 	rigth_car = player_car.x + CAR_WIDTH;
@@ -599,17 +610,39 @@ void pick_up_heart(game_t& game, car_t& player_car, heart_t& heart) {
 	bool picked = true;
 
 	//check if heart and car are in collision
-	if (bottom_heart <= top_car) picked = false;
-	if (top_heart >= bottom_car) picked = false;
-	if (rigth_heart <= left_car) picked = false;
-	if (left_heart >= rigth_car) picked = false;
+	if (bottom_item <= top_car) picked = false;
+	if (top_item >= bottom_car) picked = false;
+	if (rigth_item <= left_car) picked = false;
+	if (left_item >= rigth_car) picked = false;
 
-	if (picked == true) {
+	return picked;
+}
+
+
+void pick_up_heart(game_t& game, car_t& player_car, item_t& heart) {
+	game.heart.is_picked = pick_up_item(game, player_car, heart);
+
+	if (game.heart.is_picked) {
 		game.lives++;
 		heart.y = 0;
 		heart.x = 0;
-		heart.is_active = false;
+		heart.is_visible = false;
 	}
+}
+
+
+void pick_up_power_up(game_t& game, car_t& player_car, item_t& power_up) {
+	game.power_up.is_picked = pick_up_item(game, player_car, power_up);
+
+	if (game.power_up.is_picked) {
+		power_up.act_time = SDL_GetTicks();
+		power_up.y = 0;
+		power_up.x = 0;
+		power_up.is_visible = false;
+	}
+	power_up.time_left = calculate_power_up_time_left(game);
+
+	if (power_up.time_left == 0) power_up.is_picked = false;
 }
 
 
@@ -629,7 +662,7 @@ void generate_random_car(textures_t textures, game_t* game, car_t& player_car) {
 			int n = (rand() % 300) + 1;
 			if (n == 1) {
 				car_t random_car;
-				
+
 				//generate X position of car
 				int x = generate_random_x_on_road(game);
 				if (x > SCREEN_WIDTH / 2) x -= CAR_WIDTH;
@@ -640,36 +673,51 @@ void generate_random_car(textures_t textures, game_t* game, car_t& player_car) {
 				//generate random car speed 
 				// min-half player car speed 
 				// max-player car speed
-				
+
 				int speed = 0;
 				while (speed < player_car.speed / 2) {
-					speed = (rand() % (int)player_car.speed-1) +1;
+					speed = (rand() % (int)player_car.speed - 1) + 1;
 				}
 				random_car.speed = speed;
-				
+
 				//generate type of car HOSITLE or NORMAL
 				int type = rand() % 2;
 				if (type == NORMAL) random_car.type = NORMAL;
 				else random_car.type = HOSTILE;
-		
+
 				car_push_back(&game->cars, random_car);
 			}
 		}
 	}
 }
 
-//generates heart when in unlimited lives stage
-void generate_random_heart(heart_t& heart, game_time_t& time, game_t& game) {
 
-	if (time.world_time <= INF_LIVES_TIME && !heart.is_active) {
+void generate_random_item(item_t& item, game_time_t& time, game_t& game) {
+
+	if (!item.is_visible) {
 		int n = (rand() % 100) + 1;
 		if (n == 1) {
 			int x = generate_random_x_on_road(&game);
-			if (x > SCREEN_WIDTH / 2) x -= HEART_WIDTH;
-			heart.x = x;
-			heart.y = 0;
-			heart.is_active = true;
+			if (x > SCREEN_WIDTH / 2) x -= ITEM_WIDTH;
+			item.x = x;
+			item.y = 0;
+			item.is_visible = true;
 		}
+	}
+}
+
+void generate_random_power_up(item_t& power_up, game_time_t& time, game_t& game) {
+	
+	if (!game.power_up.is_picked) {
+		generate_random_item(power_up, time, game);
+	}
+}
+
+//generates heart when in unlimited lives stage
+void generate_random_heart(item_t& heart, game_time_t& time, game_t& game) {
+
+	if (time.world_time <= INF_LIVES_TIME) {
+		generate_random_item(heart, time, game);
 	}
 }
 
@@ -733,9 +781,9 @@ void respawn_car(car_t& player_car, game_t& game) {
 	if (SDL_GetTicks() - player_car.crashed_at >= CAR_RESPAWN_TIME) {
 
 		if (game.grass_width_on_car_y == MIN_GRASS_WIDTH) {
-			
+
 			int n = rand() % 2;
-			if(n == 0) player_car.x = CAR_X + GRASS_WIDTH;
+			if (n == 0) player_car.x = CAR_X + GRASS_WIDTH;
 			else player_car.x = CAR_X - GRASS_WIDTH;
 		}
 		else {
@@ -768,8 +816,8 @@ void check_for_grass_colision(car_t& player_car, game_t& game, game_time_t& time
 
 
 	if (!player_car.on_fire) {
-		bool car_on_left_grass = player_car.x + CAR_WIDTH/2 <= game.grass_width_on_car_y;
-		bool car_on_right_grass = player_car.x + CAR_WIDTH/2 >= SCREEN_WIDTH - game.grass_width_on_car_y;
+		bool car_on_left_grass = player_car.x + CAR_WIDTH / 2 <= game.grass_width_on_car_y;
+		bool car_on_right_grass = player_car.x + CAR_WIDTH / 2 >= SCREEN_WIDTH - game.grass_width_on_car_y;
 		bool car_on_middle_grass = player_car.x == SCREEN_WIDTH / 2 - GRASS_WIDTH / 2;
 
 		if (car_on_left_grass || car_on_right_grass || (car_on_middle_grass && game.grass_width_on_car_y == MIN_GRASS_WIDTH)) {
@@ -938,11 +986,14 @@ void cap_fps(fps_t& game_fps, car_t& car) {
 	}
 }
 
+int calculate_power_up_time_left(game_t &game) {
+	return (POWER_UP_TIME - (SDL_GetTicks() - game.power_up.act_time)) / 1000;
+}
 
 //renders legend containins game informations
-void render_legend(SDL_Surface* screen, SDL_Surface* charset, game_time_t& time, fps_t& game_fps, SDL_Renderer* renderer, SDL_Texture* scrtex, game_t game, colors_t& colors, car_t &player_car) {
+void render_legend(SDL_Surface* screen, SDL_Surface* charset, game_time_t& time, fps_t& game_fps, SDL_Renderer* renderer, SDL_Texture* scrtex, game_t game, colors_t& colors, car_t& player_car) {
 
-	char text[128];
+	char text[258];
 
 	DrawRectangle(screen, LEGEND_X, LEGEND_Y, SCREEN_WIDTH, LEGEND_HEIGHT, colors.czarny, colors.niebieski);
 	sprintf(text, "Igor Stadnicki 193435");
@@ -950,10 +1001,17 @@ void render_legend(SDL_Surface* screen, SDL_Surface* charset, game_time_t& time,
 
 	if (time.world_time >= INF_LIVES_TIME) {
 		sprintf(text, "Time = %.1lf s  score: %.0lf  lives: %d, car speed: %.1lf", time.world_time, game.score.points, game.lives, player_car.speed);
+		
 	}
 	else {
 		sprintf(text, "Time = %.1lf s  score: %.0lf  lives: unlimited for %ds (%d), car speed: %.1lf", time.world_time, game.score.points, INF_LIVES_TIME, game.lives, player_car.speed);
 	}
+	
+	//calculate and show power up time
+	if (game.power_up.is_picked) {
+		sprintf(text + strlen(text), " Power up time left: %d s", game.power_up.time_left);
+	}
+	
 	DrawString(screen, TEXT_CENTER, LEGEND_Y + 20, text, charset);
 
 	sprintf(text, "Esc - wyjscie, \030 - przyspieszenie, \031 - zwolnienie, n - nowa gra");
@@ -993,7 +1051,7 @@ void fire_bullet(game_t& game, car_t& player_car) {
 }
 
 
-void sort_by_time(scores_t &saved_scores) {
+void sort_by_time(scores_t& saved_scores) {
 	int size = saved_scores.total_saves;
 	for (int i = 0; i < size; ++i)
 	{
@@ -1006,7 +1064,7 @@ void sort_by_time(scores_t &saved_scores) {
 			}
 		}
 	}
-	
+
 }
 
 
@@ -1027,7 +1085,7 @@ void sort_by_points(scores_t& saved_scores) {
 
 
 //handling input
-void events_handling(SDL_Event& event, car_t& car, game_t& game, game_time_t& time, scores_t & saved_scores) {
+void events_handling(SDL_Event& event, car_t& car, game_t& game, game_time_t& time, scores_t& saved_scores) {
 
 	const Uint8* state = SDL_GetKeyboardState(NULL);
 	if (state[SDL_SCANCODE_LEFT] && !game.which_menu.pause && car.on_fire == false && car.speed > 0) {
@@ -1135,19 +1193,19 @@ void render_fire(SDL_Renderer* renderer, car_t& player_car, SDL_Texture* fire) {
 
 
 //renders heart and moves it
-void render_heart(SDL_Renderer* renderer, heart_t& heart, SDL_Texture* heart_txt, car_t& player_car) {
+void render_item(SDL_Renderer* renderer, item_t& item, SDL_Texture* txt, car_t& player_car) {
 
-	if (heart.is_active) {
-		SDL_Rect heart_rect = { heart.x, heart.y, HEART_WIDTH, HEART_HEIGTH };
-		SDL_RenderCopy(renderer, heart_txt, NULL, &heart_rect);
+	if (item.is_visible) {
+		SDL_Rect heart_rect = { item.x, item.y, ITEM_WIDTH, ITEM_HEIGTH };
+		SDL_RenderCopy(renderer, txt, NULL, &heart_rect);
 
-		if (heart.y >= 0) {
-			heart.y += player_car.speed;
+		if (item.y >= 0) {
+			item.y += player_car.speed;
 		}
-		if (heart.y >= SCREEN_HEIGHT) {
-			heart.y = 0;
-			heart.x = 0;
-			heart.is_active = false;
+		if (item.y >= SCREEN_HEIGHT) {
+			item.y = 0;
+			item.x = 0;
+			item.is_visible = false;
 		}
 	}
 }
@@ -1202,13 +1260,16 @@ void load_picked_save(SDL_Event& event, game_t& game, game_time_t& time, car_t& 
 void move_hostile_car_to_player(game_t& game, car_t& player_car) {
 	if (!player_car.on_fire) {
 		for (int i = 0; i < game.cars.count; i++) {
-			if (game.grass.ptr[game.grass.count - 1].width == MIN_GRASS_WIDTH && game.cars.ptr[i].x < SCREEN_WIDTH / 2) continue;
-			if (game.cars.ptr[i].type == HOSTILE) {
-				if (game.cars.ptr[i].x > player_car.x) {
-					game.cars.ptr[i].x -= CAR_MOVE_PIXELS;
-				}
-				else if (game.cars.ptr[i].x < player_car.x) {
-					game.cars.ptr[i].x += CAR_MOVE_PIXELS;
+			int n = (rand() % 2) + 1;
+			if (n == 1) {
+				if (game.grass.ptr[game.grass.count - 1].width == MIN_GRASS_WIDTH && game.cars.ptr[i].x < SCREEN_WIDTH / 2) continue;
+				if (game.cars.ptr[i].type == HOSTILE) {
+					if (game.cars.ptr[i].x > player_car.x) {
+						game.cars.ptr[i].x -= CAR_MOVE_PIXELS;
+					}
+					else if (game.cars.ptr[i].x < player_car.x) {
+						game.cars.ptr[i].x += CAR_MOVE_PIXELS;
+					}
 				}
 			}
 		}
