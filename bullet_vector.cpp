@@ -10,12 +10,10 @@ struct bullet_t {
     int fired_time;
 };
 
-//Struktura opisuj¹ca wektor liczb ca³kowitych.
-//j-ta komórka wektora w (0 <= j < w.count) jest dostêpna jest jako w.ptr[j].
 typedef struct {
-    int allocated_size; // rozmiar zaalokowanego bufora
-    int count;          // liczba elementów w wektorze
-    bullet_t* ptr;           // wskaŸnik do pocz¹tku bufora
+    int allocated_size;     // rozmiar zaalokowanego bufora
+    int count;              // liczba elementów w wektorze
+    bullet_t* ptr;          // wskaŸnik do pocz¹tku bufora
 } bullet_vector_t;
 
 

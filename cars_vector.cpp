@@ -12,12 +12,11 @@ struct car_t {
     int type;
     bool on_fire;
 };
-//Struktura opisuj¹ca wektor liczb ca³kowitych.
-//j-ta komórka wektora w (0 <= j < w.count) jest dostêpna jest jako w.ptr[j].
+
 typedef struct {
-    int allocated_size; // rozmiar zaalokowanego bufora
-    int count;          // liczba elementów w wektorze
-    car_t* ptr;           // wskaŸnik do pocz¹tku bufora
+    int allocated_size;     // rozmiar zaalokowanego bufora
+    int count;              // liczba elementów w wektorze
+    car_t* ptr;             // wskaŸnik do pocz¹tku bufora
 } car_vector_t;
 
 
@@ -60,8 +59,8 @@ car_t car_pop_back(car_vector_t* v) {
     return retv;
 }
 
-void car_vector_delete(car_vector_t* v, int index)
-{
+void car_vector_delete(car_vector_t* v, int index){
+    
     if (index < 0 || index >= v->count)
         return;
 

@@ -2,17 +2,14 @@
 #include <stdlib.h>
 #include <string.h>
 
-
-
 struct grass_t {
     int y;
     int width;
 };
-//Struktura opisuj¹ca wektor liczb ca³kowitych.
-//j-ta komórka wektora w (0 <= j < w.count) jest dostêpna jest jako w.ptr[j].
+
 typedef struct {
-    int allocated_size; // rozmiar zaalokowanego bufora
-    int count;          // liczba elementów w wektorze
+    int allocated_size;     // rozmiar zaalokowanego bufora
+    int count;              // liczba elementów w wektorze
     grass_t* ptr;           // wskaŸnik do pocz¹tku bufora
 } grass_vector_t;
 
@@ -23,6 +20,7 @@ void init_grass_vector(grass_vector_t* v) {
     v->allocated_size = 1;
     v->ptr = (grass_t*)malloc(v->allocated_size * sizeof(grass_t));
 }
+
 
 // Realokacja wektora *v, tak aby bufor mia³ pojemnoœæ reallocate_size.
 void grass_reallocate(grass_vector_t* v, int reallocate_size) {
@@ -44,17 +42,15 @@ void grass_push_back(grass_vector_t* v, grass_t val) {
 }
 
 
-// Pobranie i usuniêcie wartoœci koñcowego elementu wektora *v.
 grass_t grass_pop_back(grass_vector_t* v) {
     v->count--;
     grass_t retv = v->ptr[v->count];
 
-    //Realokacja realizowana, gdy rozmiar bufora jest ponad dwukrotnie
-    //nadmiarowy w stosunku do liczby przechowywanych elementów.
     if (4 * v->count <= v->allocated_size)
         grass_reallocate(v, v->allocated_size / 2);
     return retv;
 }
+
 
 void grass_add_to_front(grass_vector_t* v, grass_t val) {
     if (v->count == v->allocated_size)
