@@ -67,10 +67,22 @@ struct score_t {
 };
 
 
+struct final_score_t {
+	double points = 0;
+	double total_time = 0;
+};
+
 struct menus {
 	bool running = true;
 	bool pause = false;
 	bool save_screen = false;
+	bool list_view = true;
+};
+
+struct scores_t {
+	double* scores = { 0 };
+	int total_saves = 0;
+	bool loaded = false;
 };
 
 struct game_t {
@@ -101,6 +113,96 @@ struct colors_t {
 
 
 
+int load_scores_size() {
+
+	//get total number of saved scores
+	FILE* file = fopen("test.txt", "r+");
+	int size = 0;
+	if (file == NULL) cout << "ERROR WHILE OPENING FILE";
+	else {
+		fscanf(file, "%d", &size);
+		fclose(file);
+	}
+	return size;
+}
+
+
+void save_score(game_t& game, game_time_t& time, scores_t& saved_scores) {
+
+	char* filename = "test.txt";
+
+	saved_scores.total_saves = load_scores_size() + 1;
+	FILE* fp = fopen(filename, "r+");
+	if (fp == NULL)
+	{
+		printf("Error opening the file %s", filename);
+	}
+	else {
+		fseek(fp, 0, SEEK_SET);
+		fprintf(fp, "%d\n", saved_scores.total_saves);
+		fseek(fp, 0, SEEK_END);
+		fprintf(fp, "%.lf\n%.lf\n", game.score.points, time.world_time);
+		fclose(fp);
+	}
+}
+
+
+void load_scores_list(scores_t &saved_scores) {
+
+	FILE* file = fopen("test.txt", "r");
+
+	//create file if does not exist
+	if (file == NULL) {
+		file = fopen("test.txt", "w");
+		saved_scores.total_saves = 0;
+		fprintf(file, "%d", saved_scores.total_saves);
+		return;
+	}
+
+	file = fopen("test.txt", "r+");
+	int size = load_scores_size();
+	double score = 0;
+	saved_scores.scores = (double*)malloc(size * 2 * sizeof(double));
+	if (file == NULL) cout << "ERROR WHILE OPENING FILE";
+	else {
+		saved_scores.total_saves = size * 2;
+		fseek(file, 1, SEEK_SET);
+		if (saved_scores.scores != NULL) {
+			for (int i = 0; i < size * 2; i++) {
+				fscanf(file, "%lf", &score);
+				saved_scores.scores[i] = score;
+			}
+		}
+		fclose(file);
+	}
+}
+
+
+//shows pause screen
+void show_list_screen(SDL_Surface* screen, colors_t& colors, SDL_Surface* charset, SDL_Texture* scrtex, SDL_Renderer* renderer, scores_t & saved_scores, game_t& game) {
+	SDL_FillRect(screen, NULL, colors.czarny);
+
+	char text[128];
+	if (saved_scores.loaded == false) {
+		load_scores_list(saved_scores);
+		saved_scores.loaded = true;
+	}
+
+	sprintf(text, "LIST OF SCORES");
+	DrawString(screen, TEXT_CENTER, 50, text, charset);
+	sprintf(text, "Click n for new game");
+	DrawString(screen, TEXT_CENTER, 66, text, charset);
+	for (int i = 0; i < saved_scores.total_saves; i += 2) {
+		sprintf(text, "%d) %.lf points in %.lf seconds", i / 2 + 1, saved_scores.scores[i], saved_scores.scores[i + 1]);
+		DrawString(screen, TEXT_CENTER, 82 + 16 * (i / 2 + 1), text, charset);
+	}
+
+	SDL_UpdateTexture(scrtex, NULL, screen->pixels, screen->pitch);
+	SDL_RenderCopy(renderer, scrtex, NULL, NULL);
+	SDL_RenderPresent(renderer);
+}
+
+
 int main(int argc, char* argv[]) {
 	srand(time(nullptr));
 	SDL_Event event;
@@ -115,7 +217,7 @@ int main(int argc, char* argv[]) {
 	game_t game;
 	colors_t colors;
 	heart_t heart;
-
+	scores_t saved_scores;
 
 	init_car_vector(&game.cars);
 	init_grass_vector(&game.grass);
@@ -156,6 +258,9 @@ int main(int argc, char* argv[]) {
 		else if (game.which_menu.pause) {
 			show_pause_screen(screen, colors, charset, scrtex, renderer);
 		}
+		else if (game.which_menu.list_view) {
+			show_list_screen(screen, colors, charset, scrtex, renderer, saved_scores, game);
+		}
 		else if (game.lives == 0) {
 			show_gameover_screen(screen, colors, charset, scrtex, renderer, game);
 		}
@@ -182,7 +287,7 @@ int main(int argc, char* argv[]) {
 			SDL_RenderPresent(renderer);
 		}
 
-		events_handling(event, player_car, game, time);
+		events_handling(event, player_car, game, time, saved_scores);
 		cap_fps(game_fps, player_car);
 	}
 
@@ -975,8 +1080,13 @@ void fire_bullet(game_t& game, car_t& player_car) {
 }
 
 
+
+
+
+
+
 //handling input
-void events_handling(SDL_Event& event, car_t& car, game_t& game, game_time_t& time) {
+void events_handling(SDL_Event& event, car_t& car, game_t& game, game_time_t& time, scores_t & saved_scores) {
 
 	const Uint8* state = SDL_GetKeyboardState(NULL);
 	if (state[SDL_SCANCODE_LEFT] && !game.which_menu.pause && car.on_fire == false && car.speed > 0) {
@@ -1003,10 +1113,16 @@ void events_handling(SDL_Event& event, car_t& car, game_t& game, game_time_t& ti
 					car.speed -= SPEED_INCREMENT;
 			}
 			else if (event.key.keysym.sym == SDLK_n) restart_game(game, time, car);
+			else if (event.key.keysym.sym == SDLK_i) game.which_menu.list_view = true;
 			else if (event.key.keysym.sym == SDLK_p) stop_game(car, time, game);
 			else if (event.key.keysym.sym == SDLK_s) save_game(game, time, car);
 			else if (event.key.keysym.sym == SDLK_l) game.which_menu.save_screen = true;
 			else if (event.key.keysym.sym == SDLK_SPACE) fire_bullet(game, car);
+			else if (event.key.keysym.sym == SDLK_a && game.lives == 0) {
+				save_score(game, time, saved_scores);
+				saved_scores.loaded = false;
+				game.which_menu.list_view = true;
+			}
 			break;
 		case SDL_QUIT:
 			game.which_menu.running = false;
@@ -1032,6 +1148,7 @@ void restart_game(game_t& game, game_time_t& time, car_t& car) {
 	generate_start_grass(game);
 	free(game.bullets.ptr);
 	init_bullet_vector(&game.bullets);
+	game.which_menu.list_view = false;
 	game.score = { 0 };
 	game.lives = START_LIVES;
 	time.world_time = 0;
@@ -1109,6 +1226,8 @@ void show_gameover_screen(SDL_Surface* screen, colors_t& colors, SDL_Surface* ch
 	DrawString(screen, TEXT_CENTER, 50, text, charset);
 	sprintf(text, "Click n for new game");
 	DrawString(screen, TEXT_CENTER, 66, text, charset);
+	sprintf(text, "Click a to append score to list");
+	DrawString(screen, TEXT_CENTER, 82, text, charset);
 	SDL_UpdateTexture(scrtex, NULL, screen->pixels, screen->pitch);
 	SDL_RenderCopy(renderer, scrtex, NULL, NULL);
 	SDL_RenderPresent(renderer);

@@ -31,7 +31,7 @@ using namespace std;
 #define BULLET_WIDTH 1
 #define BULLET_HEIGTH 10
 #define CAR_RESPAWN_TIME 1500	// in Miliseconds
-#define INF_LIVES_TIME 60		// in Seconds
+#define INF_LIVES_TIME 1		// in Seconds
 #define SAVES_NUMBER 10
 #define BULLET_SPEED 7
 #define SPEED_INCREMENT 4
@@ -57,7 +57,7 @@ struct grass_t;
 struct bullet_t;
 struct colors_t;
 struct heart_t;
-
+struct scores_t;
 
 void pick_up_heart(game_t& game, car_t& player_car, heart_t& heart);
 void generate_random_heart(heart_t& heart, game_time_t& time, game_t& game);
@@ -67,8 +67,8 @@ int init(SDL_Window*& window, SDL_Renderer*& renderer, SDL_Surface*& screen, SDL
 void free_memory(SDL_Surface* screen, SDL_Texture* scrtex, SDL_Renderer* renderer, SDL_Window* window);
 void load_charset(SDL_Surface*& charset);
 void render_car(car_t& car, SDL_Renderer* renderer, SDL_Texture* carTexture);
-void events_handling(SDL_Event& event, car_t& car, game_t& game, game_time_t& time);
-void calculate_time(game_time_t& time);
+void events_handling(SDL_Event& event, car_t& car, game_t& game, game_time_t& time, scores_t& saved_scores);
+	void calculate_time(game_time_t& time);
 void render_legend(SDL_Surface* screen, SDL_Surface* charset, game_time_t& time, fps_t& game_fps, SDL_Renderer* renderer, SDL_Texture* scrtex, game_t game, colors_t& colors);
 void cap_fps(fps_t& game_fps, car_t& car);
 void generate_grass_que(game_t& game);
