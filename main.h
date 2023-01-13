@@ -87,7 +87,7 @@ void cap_fps(fps_t& game_fps, car_t& car);
 void generate_grass_que(game_t& game);
 void generate_start_grass(game_t& game);
 void restart_game(game_t& game, game_time_t& time, car_t& car);
-void render_grass(SDL_Surface* screen, SDL_Texture* scrtex, game_t& game, SDL_Renderer* renderer, SDL_Texture* roadTexture, car_t& car);
+void render_grass(game_t& game, SDL_Renderer* renderer, SDL_Texture* roadTexture, car_t& car);
 void render_implemented(SDL_Surface* screen, SDL_Surface* charset, SDL_Texture* scrtex, SDL_Renderer* renderer, colors_t& colors);
 void stop_game(car_t& car, game_time_t& time, game_t& game);
 SDL_Texture* load_texture(char s[], SDL_Renderer* renderer);
