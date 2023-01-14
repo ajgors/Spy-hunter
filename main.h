@@ -24,7 +24,7 @@ using namespace std;
 #define SCREEN_HEIGHT 480
 //time constants
 #define CAR_RESPAWN_TIME 1500	// in Miliseconds
-#define INF_LIVES_TIME 1		// in Seconds
+#define INF_LIVES_TIME 30		// in Seconds
 #define HALT_TIME 3000			// in Miliseconds
 #define POWER_UP_TIME 10000		// in Miliseconds
 #define BULLET_DELAY 350		// in Miliseconds
@@ -42,7 +42,7 @@ using namespace std;
 #define TEXT_CENTER screen->w / 2 - strlen(text) * 8 / 2
 //probability constants
 #define ITEM_PROB 1000
-#define CAR_PROB 300
+#define CAR_PROB 100
 #define HOSTILE_CAR_MOVE_PROB 2
 //additional constants
 #define FPS 60

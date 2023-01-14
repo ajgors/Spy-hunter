@@ -290,6 +290,7 @@ void manage_cars_position(game_t& game, car_t& player_car, game_time_t& time) {
 				destroy_car(player_car, game, time);
 			}
 			game.cars.delete_at_index(i);
+			continue;
 		}
 
 		//other cars bumping to each other
