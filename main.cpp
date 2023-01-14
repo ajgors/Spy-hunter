@@ -13,11 +13,7 @@ extern "C" {
 
 #include <iostream>
 #include <cstdlib>
-//#include "vector.h"
-//#include "cars_vector.h"
-//#include "grass_vector.h"
-//#include "bullet_vector.h"
-#include "vector-generic.h"
+#include "vector.h"
 #include <iostream>
 #include <filesystem>
 

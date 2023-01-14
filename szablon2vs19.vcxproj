@@ -19,11 +19,7 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="bullet_vector.cpp" />
-    <ClCompile Include="cars_vector.cpp" />
-    <ClCompile Include="grass_vector.cpp" />
     <ClCompile Include="main.cpp" />
-    <ClCompile Include="vector.cpp" />
   </ItemGroup>
   <ItemGroup>
     <Image Include="..\..\..\bullet.bmp" />
@@ -36,10 +32,6 @@
     <Image Include="grass.bmp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\..\vector_generic\vector_generic\vector-generic.h" />
-    <ClInclude Include="bullet_vector.h" />
-    <ClInclude Include="cars_vector.h" />
-    <ClInclude Include="grass_vector.h" />
     <ClInclude Include="main.h" />
     <ClInclude Include="vector.h" />
   </ItemGroup>
