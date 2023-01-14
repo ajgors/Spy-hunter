@@ -74,7 +74,7 @@ struct menus {
 };
 
 struct scores_t {
-	final_score_t* scores = { 0 };
+	Vector<final_score_t> scores;
 	int total_saves = 0;
 	bool loaded = false;
 };
@@ -699,7 +699,9 @@ void generate_random_heart(item_t& heart, game_time_t& time, game_t& game) {
 
 //frees textures memory
 void free_textures(textures_t& textures) {
+	cout << textures.txt_p.size();
 	for (int i = 0; i < textures.txt_p.size(); i++) {
+		if (textures.txt_p[i] == NULL) continue;
 		SDL_DestroyTexture(*textures.txt_p[i]);
 	}
 }
@@ -1031,10 +1033,8 @@ void fire_bullet(game_t& game, car_t& player_car) {
 
 void sort_by_time(scores_t& saved_scores) {
 	
-	int size = saved_scores.total_saves;
-	
-	for (int i = 0; i < size; ++i){
-		for (int j = 0; j < size - 1; ++j){
+	for (int i = 0; i < saved_scores.scores.size(); ++i){
+		for (int j = 0; j < saved_scores.scores.size() - 1; ++j){
 			if (saved_scores.scores[j].total_time < saved_scores.scores[i].total_time) {
 				final_score_t temp = saved_scores.scores[i];
 				saved_scores.scores[i] = saved_scores.scores[j];
@@ -1048,10 +1048,8 @@ void sort_by_time(scores_t& saved_scores) {
 
 void sort_by_points(scores_t& saved_scores) {
 	
-	int size = saved_scores.total_saves;
-	
-	for (int i = 0; i < size; ++i){
-		for (int j = 0; j < size - 1; ++j){
+	for (int i = 0; i < saved_scores.scores.size(); ++i) {
+		for (int j = 0; j < saved_scores.scores.size() - 1; ++j){
 			if (saved_scores.scores[j].points < saved_scores.scores[i].points) {
 				final_score_t temp = saved_scores.scores[i];
 				saved_scores.scores[i] = saved_scores.scores[j];
@@ -1302,13 +1300,13 @@ void load_scores_list(scores_t& saved_scores) {
 		file = fopen(SAVE_FILE, "w");
 		saved_scores.total_saves = 0;
 		fprintf(file, "%d", saved_scores.total_saves);
+		fclose(file);
 		return;
 	}
 
 	file = fopen(SAVE_FILE, "r+");
 	int size = load_scores_size();
-	saved_scores.scores = (final_score_t*)malloc(size * sizeof(final_score_t));
-
+	saved_scores.scores.clear();
 	if (file == NULL) {
 		cout << "ERROR WHILE OPENING FILE";
 		return;
@@ -1316,14 +1314,12 @@ void load_scores_list(scores_t& saved_scores) {
 	else {
 		saved_scores.total_saves = size;
 		fseek(file, 1, SEEK_SET);
-		if (saved_scores.scores) {
 			for (int i = 0; i < size; i++) {
 				final_score_t final_score = { 0 };
 				fscanf(file, "%lf", &final_score.points);
 				fscanf(file, "%lf", &final_score.total_time);
-				saved_scores.scores[i] = final_score;
+				saved_scores.scores.push_back(final_score);
 			}
-		}
 		fclose(file);
 	}
 }
