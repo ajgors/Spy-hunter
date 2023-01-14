@@ -816,7 +816,7 @@ void render_implemented(SDL_Surface* screen, SDL_Surface* charset, SDL_Texture* 
 	DrawRectangle(screen, SCREEN_WIDTH - IMPLEMENTED_WIDTH, SCREEN_HEIGHT - IMPLEMENTED_HEIGHT, IMPLEMENTED_WIDTH, IMPLEMENTED_HEIGHT, colors.czarny, colors.niebieski);
 	sprintf(text, "a b c d e f g");
 	DrawString(screen, screen->w - IMPLEMENTED_WIDTH, screen->h - IMPLEMENTED_HEIGHT, text, charset);
-	sprintf(text, "h i j k m");
+	sprintf(text, "h i j k m n o");
 	DrawString(screen, screen->w - IMPLEMENTED_WIDTH, screen->h - (IMPLEMENTED_HEIGHT - 10), text, charset);
 
 	SDL_UpdateTexture(scrtex, NULL, screen->pixels, screen->pitch);
