@@ -28,7 +28,7 @@ using namespace std;
 #define INF_LIVES_TIME 60		// in Seconds
 #define HALT_TIME 3000			// in Miliseconds
 #define POWER_UP_TIME 10000		// in Miliseconds
-#define BULLET_DELAY 500		// in Miliseconds
+#define BULLET_DELAY 200		// in Miliseconds
 //coordinates constants
 #define CAR_X (SCREEN_WIDTH / 2) - (CAR_WIDTH / 2)
 #define CAR_Y (SCREEN_HEIGHT / 2) + (LEGEND_HEIGHT)
@@ -82,7 +82,7 @@ void load_charset(SDL_Surface*& charset);
 void render_car(car_t& car, SDL_Renderer* renderer, SDL_Texture* carTexture);
 void events_handling(SDL_Event& event, car_t& car, game_t& game, game_time_t& time, scores_t& saved_scores);
 void calculate_time(game_time_t& time);
-void render_legend(SDL_Surface* screen, SDL_Surface* charset, game_time_t& time, fps_t& game_fps, SDL_Renderer* renderer, SDL_Texture* scrtex, game_t game, colors_t& colors, car_t& player_car);
+void render_legend(SDL_Surface* screen, SDL_Surface* charset, game_time_t& time, SDL_Renderer* renderer, SDL_Texture* scrtex, game_t *game, colors_t& colors, car_t& player_car);
 void cap_fps(fps_t& game_fps, car_t& car);
 void generate_grass_que(game_t& game);
 void generate_start_grass(game_t& game);

@@ -36,6 +36,7 @@
     <Image Include="grass.bmp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\..\..\vector_generic\vector_generic\vector-generic.h" />
     <ClInclude Include="bullet_vector.h" />
     <ClInclude Include="cars_vector.h" />
     <ClInclude Include="grass_vector.h" />

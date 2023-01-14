@@ -13,10 +13,11 @@ extern "C" {
 
 #include <iostream>
 #include <cstdlib>
-#include "vector.h"
-#include "cars_vector.h"
-#include "grass_vector.h"
-#include "bullet_vector.h"
+//#include "vector.h"
+//#include "cars_vector.h"
+//#include "grass_vector.h"
+//#include "bullet_vector.h"
+#include "vector-generic.h"
 #include <iostream>
 #include <filesystem>
 
@@ -78,7 +79,7 @@ struct menus {
 	bool running = true;
 	bool pause = false;
 	bool save_screen = false;
-	bool list_view = true;
+	bool list_view = false;
 };
 
 struct scores_t {
@@ -88,10 +89,10 @@ struct scores_t {
 };
 
 struct game_t {
-	vector_t grass_que = { 0 };
-	car_vector_t cars = { 0 };
-	grass_vector_t grass = { 0 };
-	bullet_vector_t bullets = { 0 };
+	Vector<int> grass_que;
+	Vector<car_t> cars;
+	Vector<bullet_t> bullets;
+	Vector<grass_t> grass;
 	int grass_width_on_car_y = 0;
 	menus which_menu;
 	score_t score = { 0 };
@@ -130,11 +131,7 @@ int main(int argc, char* argv[]) {
 	game_t game;
 	colors_t colors;
 	scores_t saved_scores;
-
-	init_car_vector(&game.cars);
-	init_grass_vector(&game.grass);
-	init_vector(&game.grass_que);
-	init_bullet_vector(&game.bullets);
+	
 
 	if (init(window, renderer, screen, scrtex)) {
 		load_charset(charset);
@@ -199,7 +196,7 @@ int main(int argc, char* argv[]) {
 			manage_cars_position(game, player_car, time);
 			icrease_score(game, player_car);
 			render_bullet(renderer, game, textures.bullet);
-			render_legend(screen, charset, time, game_fps, renderer, scrtex, game, colors, player_car);
+			render_legend(screen, charset, time, renderer, scrtex, &game, colors, player_car);
 			scroll_grass(game, player_car);
 			SDL_RenderPresent(renderer);
 		}
@@ -219,11 +216,11 @@ int main(int argc, char* argv[]) {
 //moves fired bullet 
 void move_bullets(game_t& game) {
 
-	for (int i = 0; i < game.bullets.count; i++) {
-		game.bullets.ptr[i].y -= BULLET_SPEED;
+	for (int i = 0; i < game.bullets.size(); i++) {
+		game.bullets[i].y -= BULLET_SPEED;
 
 		//remove bullet if it is out of screen
-		if (game.bullets.ptr[i].y < 0) bullet_vector_delete(&game.bullets, i);
+		if (game.bullets[i].y < 0) game.bullets.delete_at_index(i);
 	}
 }
 
@@ -231,12 +228,13 @@ void move_bullets(game_t& game) {
 //remove car if it is out of screen
 void remove_cars_outside_screen(game_t& game) {
 
-	for (int i = 0; i < game.cars.count; i++) {
-		if (game.cars.ptr[i].y > SCREEN_HEIGHT + CAR_HEIGTH) {
-			car_vector_delete(&game.cars, i);
+	for (int i = 0; i < game.cars.size(); i++) {
+		if (game.cars[i].y > SCREEN_HEIGHT + CAR_HEIGTH) {
+			game.cars.delete_at_index(i);
 		}
-		else if (game.cars.ptr[i].y + LEGEND_HEIGHT + CAR_HEIGTH < 0) {
-			car_vector_delete(&game.cars, i);
+		else if (game.cars[i].y + LEGEND_HEIGHT + CAR_HEIGTH < 0) {
+			game.cars.delete_at_index(i);
+			
 		}
 	}
 }
@@ -245,12 +243,12 @@ void remove_cars_outside_screen(game_t& game) {
 //render cars on screens
 void render_cars(SDL_Renderer* renderer, textures_t& textures, game_t& game, car_t& player_car) {
 	
-	for (int i = 0; i < game.cars.count; i++) {
-		if (game.cars.ptr[i].type == NORMAL) {
-			render_car(game.cars.ptr[i], renderer, textures.blue_car);
+	for (int i = 0; i < game.cars.size(); i++) {
+		if (game.cars[i].type == NORMAL) {
+			render_car(game.cars[i], renderer, textures.blue_car);
 		}
-		else if (game.cars.ptr[i].type == HOSTILE) {
-			render_car(game.cars.ptr[i], renderer, textures.green_car);
+		else if (game.cars[i].type == HOSTILE) {
+			render_car(game.cars[i], renderer, textures.green_car);
 		}
 	}
 	if (!player_car.on_fire) {
@@ -261,49 +259,48 @@ void render_cars(SDL_Renderer* renderer, textures_t& textures, game_t& game, car
 
 void manage_cars_position(game_t& game, car_t& player_car, game_time_t& time) {
 
-	for (int i = 0; i < game.cars.count; i++) {
+	for (int i = 0; i < game.cars.size(); i++) {
 
 		//move cars when road shrinks
-		if (game.grass.ptr[0].width > game.grass.ptr[1].width) {
-			if (game.cars.ptr[i].x < game.grass.ptr[0].width) game.cars.ptr[i].x += GRASS_WIDTH;
-			else if (game.cars.ptr[i].x + CAR_WIDTH / 2 > SCREEN_WIDTH - game.grass.ptr[0].width) game.cars.ptr[i].x -= GRASS_WIDTH;
-			if (game.grass.ptr[0].width == MIN_GRASS_WIDTH) game.cars.ptr[i].x -= GRASS_WIDTH;
+		if (game.grass[0].width > game.grass[1].width) {
+			if (game.cars[i].x < game.grass[0].width) game.cars[i].x += GRASS_WIDTH;
+			else if (game.cars[i].x + CAR_WIDTH / 2 > SCREEN_WIDTH - game.grass[0].width) game.cars[i].x -= GRASS_WIDTH;
+			if (game.grass[0].width == MIN_GRASS_WIDTH) game.cars[i].x -= GRASS_WIDTH;
 		}
 
-		game.cars.ptr[i].y += player_car.speed - game.cars.ptr[i].speed;
+		game.cars[i].y += player_car.speed - game.cars[i].speed;
 
 		//player bumping to other cars
-		if (player_car.y - CAR_HEIGTH < game.cars.ptr[i].y && player_car.y > game.cars.ptr[i].y && player_car.x + CAR_WIDTH >= game.cars.ptr[i].x && player_car.x <= game.cars.ptr[i].x + CAR_WIDTH) {
+		if (player_car.y - CAR_HEIGTH < game.cars[i].y && player_car.y > game.cars[i].y && player_car.x + CAR_WIDTH >= game.cars[i].x && player_car.x <= game.cars[i].x + CAR_WIDTH) {
 
 			if (game.power_up.time_left == 0) {
 				destroy_car(player_car, game, time);
 			}
-
-			car_vector_delete(&game.cars, i);
+			game.cars.delete_at_index(i);
 		}
 
 		//other cars bumping to each other
-		for (int k = 0; k < game.cars.count; k++) {
+		for (int k = 0; k < game.cars.size(); k++) {
 			if (k == i) continue;
-			if (game.cars.ptr[i].y - CAR_HEIGTH < game.cars.ptr[k].y && game.cars.ptr[i].y > game.cars.ptr[k].y && game.cars.ptr[i].x + CAR_WIDTH >= game.cars.ptr[k].x && game.cars.ptr[i].x <= game.cars.ptr[k].x + CAR_WIDTH) {
-				game.cars.ptr[k].speed += SPEED_INCREMENT;
+			if (game.cars[i].y - CAR_HEIGTH < game.cars[k].y && game.cars[i].y > game.cars[k].y && game.cars[i].x + CAR_WIDTH >= game.cars[k].x && game.cars[i].x <= game.cars[k].x + CAR_WIDTH) {
+				game.cars[k].speed += SPEED_INCREMENT;
 			}
 		}
 
 		//Check if bullet hit car (when hit removed from map)
-		for (int k = 0; k < game.bullets.count; k++) {
-			if (game.bullets.ptr[k].y - CAR_HEIGTH < game.cars.ptr[i].y && game.bullets.ptr[k].y > game.cars.ptr[i].y && game.bullets.ptr[k].x + CAR_WIDTH >= game.cars.ptr[i].x && game.bullets.ptr[k].x <= game.cars.ptr[i].x + CAR_WIDTH) {
+		for (int k = 0; k < game.bullets.size(); k++) {
+			if (game.bullets[k].y - CAR_HEIGTH < game.cars[i].y && game.bullets[k].y > game.cars[i].y && game.bullets[k].x + CAR_WIDTH >= game.cars[i].x && game.bullets[k].x <= game.cars[i].x + CAR_WIDTH) {
 
 				//save time when car wash shoted
-				if (game.cars.ptr[i].type == NORMAL) {
+				if (game.cars[i].type == NORMAL) {
 					game.score.halted_at = SDL_GetTicks();
 				}
-				else if (game.cars.ptr[i].type == HOSTILE) {
+				else if (game.cars[i].type == HOSTILE) {
 					//add poits for shoting hostile car
 					game.score.points += 100;
 				}
-				car_vector_delete(&game.cars, i);
-				bullet_vector_delete(&game.bullets, k);
+				game.cars.delete_at_index(i);
+				game.bullets.delete_at_index(k);
 			}
 		}
 
@@ -315,25 +312,25 @@ void manage_cars_position(game_t& game, car_t& player_car, game_time_t& time) {
 void scroll_grass(game_t& game, car_t& player_car) {
 
 	//update grass Y according to player speed
-	for (int i = 0; i < game.grass.count; i++) {
-		game.grass.ptr[i].y += player_car.speed;
+	for (int i = 0; i < game.grass.size(); i++) {
+		game.grass[i].y += player_car.speed;
 	}
 
 	//update traveled distance
 	game.score.traveled_distance += player_car.speed;
 
 	//remove grass outside of screen
-	if (game.grass.ptr[game.grass.count - 1].y - GRASS_HEIGHT >= SCREEN_HEIGHT) {
-		grass_pop_back(&game.grass);
+	if (game.grass[game.grass.size() - 1].y - GRASS_HEIGHT >= SCREEN_HEIGHT) {
+		game.grass.pop_back();
 	}
 
 	//add new grass from que when last grass is almost outside of screen
-	if (game.grass.ptr[game.grass.count - 1].y + GRASS_HEIGHT > SCREEN_HEIGHT && game.grass.count < NUMBER_OF_GRASS_TXT + 1) {
+	if (game.grass[game.grass.size() - 1].y + GRASS_HEIGHT > SCREEN_HEIGHT && game.grass.size() < NUMBER_OF_GRASS_TXT + 1) {
 		grass_t grass;
-		grass.y = game.grass.ptr[game.grass.count - 1].y + GRASS_HEIGHT - SCREEN_HEIGHT - GRASS_HEIGHT;
-		grass.width = pop_back(&game.grass_que);
+		grass.y = game.grass[game.grass.size() - 1].y + GRASS_HEIGHT - SCREEN_HEIGHT - GRASS_HEIGHT;
+		grass.width = game.grass_que.pop_back();
 
-		grass_add_to_front(&game.grass, grass);
+		game.grass.add_to_front(grass);
 	}
 }
 
@@ -483,51 +480,45 @@ void load_save(game_t& game, game_time_t& game_time, car_t& car, char file_name[
 		//load game struct
 
 		//laod grass
-		free(game.grass.ptr);
-		init_grass_vector(&game.grass);
+		
 		int old_que_count = 0;
 		fread(&old_que_count, sizeof(int), 1, file);
-
+		game.grass.clear();
+		
 		grass_t saved_grass;
 		for (int i = 0; i < old_que_count; i++) {
 			fread(&saved_grass, sizeof(grass_t), 1, file);
-			grass_push_back(&game.grass, saved_grass);
+			game.grass.push_back(saved_grass);
 		}
 
 		//load grass que
-		free(game.grass_que.ptr);
-		init_vector(&game.grass_que);
 		old_que_count = 0;
-		fread(&old_que_count, sizeof(game.grass_que.count), 1, file);
-
+		fread(&old_que_count, sizeof(game.grass_que.size()), 1, file);
+		game.grass_que.clear();
 		int k = 0;
 		for (int i = 0; i < old_que_count; i++) {
 			fread(&k, sizeof(int), 1, file);
-			push_back(&game.grass_que, k);
+			game.grass_que.push_back(k);
 		}
 
 		//load cars
-		free(game.cars.ptr);
-		init_car_vector(&game.cars);
 		old_que_count = 0;
 		fread(&old_que_count, sizeof(int), 1, file);
-
+		game.cars.clear();
 		car_t saved_car;
 		for (int i = 0; i < old_que_count; i++) {
 			fread(&saved_car, sizeof(car_t), 1, file);
-			car_push_back(&game.cars, saved_car);
+			game.cars.push_back(saved_car);
 		}
 
 		//load bullets
-		free(game.bullets.ptr);
-		init_bullet_vector(&game.bullets);
 		old_que_count = 0;
 		fread(&old_que_count, sizeof(int), 1, file);
-
+		game.bullets.clear();
 		bullet_t saved_bullet;
 		for (int i = 0; i < old_que_count; i++) {
 			fread(&saved_bullet, sizeof(bullet_t), 1, file);
-			bullet_push_back(&game.bullets, saved_bullet);
+			game.bullets.push_back(saved_bullet);
 		}
 
 		fread(&game.score, sizeof(game.score), 1, file);
@@ -563,27 +554,31 @@ void save_game(game_t& game, game_time_t& game_time, car_t& player_car) {
 		//save game struct
 
 		//grass vector
-		fwrite(&game.grass, sizeof(game.grass.count), 1, file);
-		for (int i = 0; i < game.grass.count; i++) {
-			fwrite(&game.grass.ptr[i], sizeof(game.grass.ptr[0]), 1, file);
+		int size = game.grass.size();
+		fwrite(&size, sizeof(size), 1, file);
+		for (int i = 0; i < game.grass.size(); i++) {
+			fwrite(&game.grass[i], sizeof(game.grass[0]), 1, file);
 		}
 
 		//grass que vector
-		fwrite(&game.grass_que.count, sizeof(game.grass_que.count), 1, file);
-		for (int i = 0; i < game.grass_que.count; i++) {
-			fwrite(&game.grass_que.ptr[i], sizeof(int), 1, file);
+		size = game.grass_que.size();
+		fwrite(&size, sizeof(size), 1, file);
+		for (int i = 0; i < game.grass_que.size(); i++) {
+			fwrite(&game.grass_que[i], sizeof(int), 1, file);
 		}
 
 		//cars vector
-		fwrite(&game.cars.count, sizeof(game.cars.count), 1, file);
-		for (int i = 0; i < game.cars.count; i++) {
-			fwrite(&game.cars.ptr[i], sizeof(game.cars.ptr[0]), 1, file);
+		size = game.cars.size();
+		fwrite(&size, sizeof(size), 1, file);
+		for (int i = 0; i < game.cars.size(); i++) {
+			fwrite(&game.cars[i], sizeof(game.cars[0]), 1, file);
 		}
 
 		//bullets vector
-		fwrite(&game.bullets.count, sizeof(game.bullets.count), 1, file);
-		for (int i = 0; i < game.bullets.count; i++) {
-			fwrite(&game.bullets.ptr[i], sizeof(game.bullets.ptr[0]), 1, file);
+		size = game.bullets.size();
+		fwrite(&size, sizeof(size), 1, file);
+		for (int i = 0; i < game.bullets.size(); i++) {
+			fwrite(&game.bullets[i], sizeof(game.bullets[0]), 1, file);
 		}
 
 		fwrite(&game.score, sizeof(game.score), 1, file);
@@ -656,8 +651,8 @@ void pick_up_power_up(game_t& game, car_t& player_car) {
 
 int generate_random_x_on_road(game_t* game) {
 
-	int road_width = SCREEN_WIDTH - 2 * game->grass.ptr[0].width;
-	int x = (rand() & road_width) + 1 + game->grass.ptr[0].width;
+	int road_width = SCREEN_WIDTH - 2 * game->grass[0].width;
+	int x = (rand() & road_width) + 1 + game->grass[0].width;
 	return x;
 }
 
@@ -666,7 +661,7 @@ void generate_random_car(textures_t textures, game_t* game, car_t& player_car) {
 
 
 	if (player_car.speed > 0) {
-		if (game->cars.count <= MAX_CARS) {
+		if (game->cars.size() <= MAX_CARS) {
 			int n = (rand() % CAR_PROB) + 1;
 			if (n == 1) {
 				car_t random_car;
@@ -693,7 +688,7 @@ void generate_random_car(textures_t textures, game_t* game, car_t& player_car) {
 				if (type == NORMAL) random_car.type = NORMAL;
 				else random_car.type = HOSTILE;
 
-				car_push_back(&game->cars, random_car);
+				game->cars.push_back(random_car);
 			}
 		}
 	}
@@ -862,34 +857,34 @@ void render_implemented(SDL_Surface* screen, SDL_Surface* charset, SDL_Texture* 
 
 void render_grass(game_t& game, SDL_Renderer* renderer, SDL_Texture* roadTexture, car_t& car) {
 
-	for (int i = 0; i < game.grass.count; ++i) {
+	for (int i = 0; i < game.grass.size(); ++i) {
 
 		SDL_Rect roadRect_left = { 0 };
 		roadRect_left.x = 0;
-		roadRect_left.y = game.grass.ptr[i].y;
-		roadRect_left.w = game.grass.ptr[i].width;
+		roadRect_left.y = game.grass[i].y;
+		roadRect_left.w = game.grass[i].width;
 		roadRect_left.h = GRASS_HEIGHT;
 
 		SDL_Rect roadRect_right = { 0 };
-		roadRect_right.x = SCREEN_WIDTH - game.grass.ptr[i].width;
-		roadRect_right.y = game.grass.ptr[i].y;
-		roadRect_right.w = game.grass.ptr[i].width;
+		roadRect_right.x = SCREEN_WIDTH - game.grass[i].width;
+		roadRect_right.y = game.grass[i].y;
+		roadRect_right.w = game.grass[i].width;
 		roadRect_right.h = GRASS_HEIGHT;
 
 		//save grass width on car Y coordiante (used for car grass collision)
 		//save if grass bottomY is betwen car topY and bottomY
-		int grass_bottom = game.grass.ptr[i].y + GRASS_HEIGHT;
+		int grass_bottom = game.grass[i].y + GRASS_HEIGHT;
 		int car_bottom = CAR_Y + CAR_HEIGTH;
 			
 		if (grass_bottom >= CAR_Y && grass_bottom <= car_bottom) {
-			game.grass_width_on_car_y = game.grass.ptr[i].width;
+			game.grass_width_on_car_y = game.grass[i].width;
 		}
 
 		//render grass in middle when grass is minimal width (to make 2 roads)
-		if (game.grass.ptr[i].width == MIN_GRASS_WIDTH) {
+		if (game.grass[i].width == MIN_GRASS_WIDTH) {
 			SDL_Rect roadRect_middle = { 0 };
 			roadRect_middle.x = SCREEN_WIDTH / 2 - GRASS_WIDTH / 2;
-			roadRect_middle.y = game.grass.ptr[i].y;
+			roadRect_middle.y = game.grass[i].y;
 			roadRect_middle.w = MIN_GRASS_WIDTH;
 			roadRect_middle.h = GRASS_HEIGHT;
 			SDL_RenderCopy(renderer, roadTexture, nullptr, &roadRect_middle);
@@ -904,14 +899,14 @@ void render_grass(game_t& game, SDL_Renderer* renderer, SDL_Texture* roadTexture
 //generates starting grass width
 void generate_start_grass(game_t& game) {
 
-	if (game.grass.count == 0) {
+	if (game.grass.size() == 0) {
 		for (int i = 0; i < NUMBER_OF_GRASS_TXT; i++) {
 
 			grass_t grass;
 			grass.y = GRASS_HEIGHT * i;
 			grass.width = 6 * GRASS_WIDTH;
 
-			grass_push_back(&game.grass, grass);
+			game.grass.push_back(grass);
 		}
 	}
 }
@@ -922,59 +917,58 @@ void generate_start_grass(game_t& game) {
 // n = 3 - no changes
 void generate_grass_que(game_t& game) {
 
-	if (game.grass_que.count == 0) {
+	if (game.grass_que.size() == 0) {
 		int n = (rand() % 3) + 1;
 		if (n == 1) {
 			//if grass can't be wider generate max width grasss
-			if (game.grass.ptr[0].width == MAX_GRASS_WIDTH) {
+			if (game.grass[0].width == MAX_GRASS_WIDTH) {
 				for (int i = 0; i < NUMBER_OF_GRASS_TXT; ++i)
 				{
-					push_back(&game.grass_que, MAX_GRASS_WIDTH);
+					game.grass_que.push_back(MAX_GRASS_WIDTH);
 				}
 			}
 			//widen grass in 3 steps
 			else {
 				for (int i = 0; i < NUMBER_OF_GRASS_TXT * 3; ++i)
 				{
-					if (i < NUMBER_OF_GRASS_TXT && game.grass.ptr[0].width + 3 * GRASS_WIDTH <= MAX_GRASS_WIDTH) {
-						push_back(&game.grass_que, game.grass.ptr[0].width + 3 * GRASS_WIDTH);
+					if (i < NUMBER_OF_GRASS_TXT && game.grass[0].width + 3 * GRASS_WIDTH <= MAX_GRASS_WIDTH) {
+						game.grass_que.push_back(game.grass[0].width + 3 * GRASS_WIDTH);
 					}
-					else if (i >= NUMBER_OF_GRASS_TXT && i < 2 * NUMBER_OF_GRASS_TXT && game.grass.ptr[0].width + 2 * GRASS_WIDTH <= MAX_GRASS_WIDTH) {
-
-						push_back(&game.grass_que, game.grass.ptr[0].width + 2 * GRASS_WIDTH);
+					else if (i >= NUMBER_OF_GRASS_TXT && i < 2 * NUMBER_OF_GRASS_TXT && game.grass[0].width + 2 * GRASS_WIDTH <= MAX_GRASS_WIDTH) {
+						game.grass_que.push_back(game.grass[0].width + 2 * GRASS_WIDTH);
 					}
-					else if (i >= 2 * NUMBER_OF_GRASS_TXT && i < NUMBER_OF_GRASS_TXT * 3 && game.grass.ptr[0].width + 1 * GRASS_WIDTH <= MAX_GRASS_WIDTH) {
-						push_back(&game.grass_que, game.grass.ptr[0].width + 1 * GRASS_WIDTH);
+					else if (i >= 2 * NUMBER_OF_GRASS_TXT && i < NUMBER_OF_GRASS_TXT * 3 && game.grass[0].width + 1 * GRASS_WIDTH <= MAX_GRASS_WIDTH) {
+						game.grass_que.push_back(game.grass[0].width + 1 * GRASS_WIDTH);
 					}
 					else {
-						push_back(&game.grass_que, MAX_GRASS_WIDTH);
+						game.grass_que.push_back(MAX_GRASS_WIDTH);
 					}
 				}
 			}
 		}
 		else if (n == 2) {
 			//if grass can't be narrower generate min width grasss
-			if (game.grass.ptr[0].width == MIN_GRASS_WIDTH) {
+			if (game.grass[0].width == MIN_GRASS_WIDTH) {
 				for (int i = 0; i < NUMBER_OF_GRASS_TXT; ++i)
 				{
-					push_back(&game.grass_que, MIN_GRASS_WIDTH);
+					game.grass_que.push_back(MIN_GRASS_WIDTH);
 				}
 			}
 			//narrow grass in 3 steps
 			else {
 				for (int i = 0; i < NUMBER_OF_GRASS_TXT * 3; ++i)
 				{
-					if (i < NUMBER_OF_GRASS_TXT && game.grass.ptr[0].width - 3 * GRASS_WIDTH >= MIN_GRASS_WIDTH) {
-						push_back(&game.grass_que, game.grass.ptr[0].width - 3 * GRASS_WIDTH);
+					if (i < NUMBER_OF_GRASS_TXT && game.grass[0].width - 3 * GRASS_WIDTH >= MIN_GRASS_WIDTH) {
+						game.grass_que.push_back(game.grass[0].width - 3 * GRASS_WIDTH);
 					}
-					else if (i >= NUMBER_OF_GRASS_TXT && i < 2 * NUMBER_OF_GRASS_TXT && game.grass.ptr[0].width - 2 * GRASS_WIDTH >= MIN_GRASS_WIDTH) {
-						push_back(&game.grass_que, game.grass.ptr[0].width - 2 * GRASS_WIDTH);
+					else if (i >= NUMBER_OF_GRASS_TXT && i < 2 * NUMBER_OF_GRASS_TXT && game.grass[0].width - 2 * GRASS_WIDTH >= MIN_GRASS_WIDTH) {
+						game.grass_que.push_back(game.grass[0].width - 2 * GRASS_WIDTH);
 					}
-					else if (i >= 2 * NUMBER_OF_GRASS_TXT && i < NUMBER_OF_GRASS_TXT * 3 && game.grass.ptr[0].width - GRASS_WIDTH >= MIN_GRASS_WIDTH) {
-						push_back(&game.grass_que, game.grass.ptr[0].width - 1 * GRASS_WIDTH);
+					else if (i >= 2 * NUMBER_OF_GRASS_TXT && i < NUMBER_OF_GRASS_TXT * 3 && game.grass[0].width - GRASS_WIDTH >= MIN_GRASS_WIDTH) {
+						game.grass_que.push_back(game.grass[0].width - GRASS_WIDTH);
 					}
 					else {
-						push_back(&game.grass_que, MIN_GRASS_WIDTH);
+						game.grass_que.push_back(MIN_GRASS_WIDTH);
 					}
 				}
 			}
@@ -983,7 +977,7 @@ void generate_grass_que(game_t& game) {
 		else {
 			for (int i = 0; i < NUMBER_OF_GRASS_TXT * 3; ++i)
 			{
-				push_back(&game.grass_que, game.grass.ptr[0].width);
+				game.grass_que.push_back(game.grass[0].width);
 			}
 		}
 	}
@@ -1003,7 +997,7 @@ void calculate_power_up_time_left(game_t& game) {
 }
 
 //renders legend containins game informations
-void render_legend(SDL_Surface* screen, SDL_Surface* charset, game_time_t& time, fps_t& game_fps, SDL_Renderer* renderer, SDL_Texture* scrtex, game_t game, colors_t& colors, car_t& player_car) {
+void render_legend(SDL_Surface* screen, SDL_Surface* charset, game_time_t& time, SDL_Renderer* renderer, SDL_Texture* scrtex, game_t *game, colors_t& colors, car_t& player_car) {
 
 	char text[258];
 
@@ -1012,15 +1006,15 @@ void render_legend(SDL_Surface* screen, SDL_Surface* charset, game_time_t& time,
 	DrawString(screen, TEXT_CENTER, LEGEND_Y + 5, text, charset);
 
 	if (time.world_time >= INF_LIVES_TIME) {
-		sprintf(text, "Time = %.1lf s  score: %.0lf  lives: %d, car speed: %.1lf", time.world_time, game.score.points, game.lives, player_car.speed);
+		sprintf(text, "Time = %.1lf s  score: %.0lf  lives: %d, car speed: %.1lf", time.world_time, game->score.points, game->lives, player_car.speed);
 
 	}else {
-		sprintf(text, "Time = %.1lf s  score: %.0lf  lives: unlimited for %ds (%d), car speed: %.1lf", time.world_time, game.score.points, INF_LIVES_TIME, game.lives, player_car.speed);
+		sprintf(text, "Time = %.1lf s  score: %.0lf  lives: unlimited for %ds (%d), car speed: %.1lf", time.world_time, game->score.points, INF_LIVES_TIME, game->lives, player_car.speed);
 	}
 
 	//show power up time left
-	if (game.power_up.time_left > 0) {
-		sprintf(text + strlen(text), " Power up time left: %d s", game.power_up.time_left);
+	if (game->power_up.time_left > 0) {
+		sprintf(text + strlen(text), " Power up time left: %d s", game->power_up.time_left);
 	}
 
 	DrawString(screen, TEXT_CENTER, LEGEND_Y + 20, text, charset);
@@ -1051,13 +1045,13 @@ void calculate_time(game_time_t& time) {
 void fire_bullet(game_t& game, car_t& player_car) {
 
 	if (!player_car.on_fire) {
-		int time_since_last_shot = SDL_GetTicks() - game.bullets.ptr[game.bullets.count - 1].fired_time;
+		int time_since_last_shot = SDL_GetTicks() - game.bullets[game.bullets.size() - 1].fired_time;
 
-		if (time_since_last_shot < BULLET_DELAY && game.bullets.count > 0) return;
+		if (time_since_last_shot < BULLET_DELAY && game.bullets.size() > 0) return;
 		bullet_t bullet;
 		bullet.fired_time = SDL_GetTicks();
 		bullet.x = player_car.x + CAR_WIDTH / 2;
-		bullet_push_back(&game.bullets, bullet);
+		game.bullets.push_back(bullet);
 	}
 }
 
@@ -1113,6 +1107,9 @@ void events_handling(SDL_Event& event, car_t& car, game_t& game, game_time_t& ti
 		if (car.speed - SPEED_INCREMENT >= 0)
 			car.speed -= SPEED_INCREMENT;
 	}
+	if (state[SDL_SCANCODE_SPACE]) {
+		fire_bullet(game, car);
+	}
 
 	while (SDL_PollEvent(&event))
 	{
@@ -1128,7 +1125,6 @@ void events_handling(SDL_Event& event, car_t& car, game_t& game, game_time_t& ti
 			else if (event.key.keysym.sym == SDLK_p) stop_game(car, time, game);
 			else if (event.key.keysym.sym == SDLK_s) save_game(game, time, car);
 			else if (event.key.keysym.sym == SDLK_l) game.which_menu.save_screen = true;
-			else if (event.key.keysym.sym == SDLK_SPACE) fire_bullet(game, car);
 			else if (event.key.keysym.sym == SDLK_a && game.lives == 0) {
 				save_score(game, time, saved_scores);
 				saved_scores.loaded = false;
@@ -1152,15 +1148,11 @@ void stop_game(car_t& car, game_time_t& time, game_t& game) {
 
 void restart_game(game_t& game, game_time_t& time, car_t& car) {
 	
-	free(game.grass_que.ptr);
-	init_vector(&game.grass_que);
-	free(game.cars.ptr);
-	init_car_vector(&game.cars);
-	free(game.grass.ptr);
-	init_grass_vector(&game.grass);
+	game.grass_que.clear();
+	game.grass.clear();
+	game.bullets.clear();
+	game.cars.clear();
 	generate_start_grass(game);
-	free(game.bullets.ptr);
-	init_bullet_vector(&game.bullets);
 	car.on_fire = false;
 	game.heart = { 0 };
 	game.power_up = { 0 };
@@ -1191,8 +1183,8 @@ void render_car(car_t& car, SDL_Renderer* renderer, SDL_Texture* carTexture) {
 //rendres bullets
 void render_bullet(SDL_Renderer* renderer, game_t& game, SDL_Texture* bullet_texture) {
 
-	for (int i = 0; i < game.bullets.count; i++) {
-		SDL_Rect bullet_rect = { game.bullets.ptr[i].x, game.bullets.ptr[i].y, BULLET_WIDTH, BULLET_HEIGTH };
+	for (int i = 0; i < game.bullets.size(); i++) {
+		SDL_Rect bullet_rect = { game.bullets[i].x, game.bullets[i].y, BULLET_WIDTH, BULLET_HEIGTH };
 		SDL_RenderCopy(renderer, bullet_texture, NULL, &bullet_rect);
 	}
 	move_bullets(game);
@@ -1282,15 +1274,15 @@ void load_picked_save(SDL_Event& event, game_t& game, game_time_t& time, car_t& 
 void move_hostile_car_to_player(game_t& game, car_t& player_car) {
 	
 	if (!player_car.on_fire) {
-		for (int i = 0; i < game.cars.count; i++) {
+		for (int i = 0; i < game.cars.size(); i++) {
 			int n = (rand() % 2) + 1;
 			if (n == 1) {
-				if (game.cars.ptr[i].type == HOSTILE) {
-					if (game.cars.ptr[i].x > player_car.x) {
-						game.cars.ptr[i].x -= CAR_MOVE_PIXELS;
+				if (game.cars[i].type == HOSTILE) {
+					if (game.cars[i].x > player_car.x) {
+						game.cars[i].x -= CAR_MOVE_PIXELS;
 					}
-					else if (game.cars.ptr[i].x < player_car.x) {
-						game.cars.ptr[i].x += CAR_MOVE_PIXELS;
+					else if (game.cars[i].x < player_car.x) {
+						game.cars[i].x += CAR_MOVE_PIXELS;
 					}
 				}
 			}
