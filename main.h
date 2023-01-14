@@ -27,7 +27,7 @@ using namespace std;
 #define INF_LIVES_TIME 60		// in Seconds
 #define HALT_TIME 3000			// in Miliseconds
 #define POWER_UP_TIME 10000		// in Miliseconds
-#define BULLET_DELAY 200		// in Miliseconds
+#define BULLET_DELAY 350		// in Miliseconds
 //coordinates constants
 #define CAR_X (SCREEN_WIDTH / 2) - (CAR_WIDTH / 2)
 #define CAR_Y (SCREEN_HEIGHT / 2) + (LEGEND_HEIGHT)

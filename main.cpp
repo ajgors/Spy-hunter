@@ -201,7 +201,7 @@ void init_game(SDL_Window*& window, SDL_Renderer*& renderer, SDL_Surface*& scree
 }
 
 
-//load all textures needed for game return true if succeed
+//load all textures needed for game, return true if succeed
 bool load_textures(textures_t& textures, SDL_Renderer* renderer) {
 
 	textures.red_car = load_texture("car_red.bmp", renderer, textures.txt_p);
@@ -459,7 +459,7 @@ void load_saves(char saves[SAVES_NUMBER][128]) {
 }
 
 
-void show_saves_screen(SDL_Surface* screen, SDL_Surface* charset, SDL_Texture* scrtex, SDL_Renderer* renderer, SDL_Event& event, char saves[10][128], colors_t& colors) {
+void show_saves_screen(SDL_Surface* screen, SDL_Surface* charset, SDL_Texture* scrtex, SDL_Renderer* renderer, SDL_Event& event, char saves[SAVES_NUMBER][128], colors_t& colors) {
 	SDL_RenderClear(renderer);
 	SDL_FillRect(screen, NULL, colors.czarny);
 	char text[128];
@@ -505,7 +505,6 @@ void load_save(game_t& game, game_time_t& game_time, car_t& car, char file_name[
 	if (file == NULL) cout << "ERROR WHILE OPENING FILE";
 	else {
 
-		//load vectors
 		load_vector(game.grass, file);
 		load_vector(game.grass_que, file);
 		load_vector(game.cars, file);
@@ -517,7 +516,6 @@ void load_save(game_t& game, game_time_t& game_time, car_t& car, char file_name[
 		fread(&game.heart, sizeof(game.heart), 1, file);
 		fread(&game.power_up, sizeof(game.power_up), 1, file);
 
-		//load other structs
 		fread(&car, sizeof(car), 1, file);
 		fread(&game_time, sizeof(game_time), 1, file);
 		game_time.t1 = SDL_GetTicks();
@@ -552,7 +550,6 @@ void save_game(game_t& game, game_time_t& game_time, car_t& player_car) {
 	if (file == NULL) cout << "ERROR OPENING FILE" << endl;
 	else {
 
-		//save vector
 		save_vector(game.grass, file);
 		save_vector(game.grass_que, file);
 		save_vector(game.cars, file);
@@ -564,7 +561,6 @@ void save_game(game_t& game, game_time_t& game_time, car_t& player_car) {
 		fwrite(&game.heart, sizeof(game.heart), 1, file);
 		fwrite(&game.power_up, sizeof(game.power_up), 1, file);
 
-		//save other stucts
 		fwrite(&player_car, sizeof(player_car), 1, file);
 		fwrite(&game_time, sizeof(game_time), 1, file);
 
