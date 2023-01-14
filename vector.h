@@ -28,7 +28,7 @@ public:
 	}
 
 	T pop_back(){
-		
+
 		if (count == 0){
 			cout << "Vector is empty" << endl;
 		}

@@ -700,7 +700,6 @@ void generate_random_heart(item_t& heart, game_time_t& time, game_t& game) {
 
 //frees textures memory
 void free_textures(textures_t& textures) {
-	cout << textures.txt_p.size();
 	for (int i = 0; i < textures.txt_p.size(); i++) {
 		if (textures.txt_p[i] == NULL) continue;
 		SDL_DestroyTexture(*textures.txt_p[i]);
