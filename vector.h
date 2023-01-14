@@ -8,21 +8,17 @@ class Vector
 {
 
 public:
-	Vector()
-	{
+	Vector(){
 		realocate(2); // Allocates memory for 2 elements
 	}
 
-	~Vector()
-	{
+	~Vector(){
 		delete[] data;
 	}
 
-	void push_back(T val)
-	{
+	void push_back(T val){
 
-		if (count >= allocated_size)
-		{
+		if (count >= allocated_size){
 			allocated_size *= 2;
 			realocate(allocated_size);
 		}
@@ -31,15 +27,12 @@ public:
 		count++;
 	}
 
-	T pop_back()
-	{
-
-		if (count == 0)
-		{
+	T pop_back(){
+		
+		if (count == 0){
 			cout << "Vector is empty" << endl;
 		}
-		else if (count <= allocated_size / 2)
-		{
+		else if (count <= allocated_size / 2){
 			allocated_size = allocated_size / 2;
 			realocate(allocated_size);
 		}
@@ -47,62 +40,50 @@ public:
 		return data[count];
 	}
 
-	T& operator[](int index)
-	{
-		if (index >= count)
-		{
+	T& operator[](int index){
+		
+		if (index >= count){
 			cout << "Index out of range" << endl;
 		}
-		else
-		{
+		else{
 			return data[index];
 		}
 	}
 
-	int size()
-	{
-		return count;
-	}
+	int size() { return count;}
 
-	void clear()
-	{
+	void clear(){
+		
 		int size = count;
-		for (int i = 0; i < size; i++)
-		{
+		for (int i = 0; i < size; i++){
 			pop_back();
 		}
 	}
 
-	void delete_at_index(int index)
-	{
+	void delete_at_index(int index){
+		
 		if (index < 0 || index >= count)
 			return;
 
-		if (count <= allocated_size / 2)
-		{
+		if (count <= allocated_size / 2){
 			allocated_size = allocated_size / 2;
 			realocate(allocated_size);
 		}
 		count--;
 
-		for (int i = index; i < count; i++)
-		{
+		for (int i = index; i < count; i++){
 			data[i] = data[i + 1];
 		}
-
-		cout << "Element deleted at: " << index << endl;
 	}
 
-	void add_to_front(T val)
-	{
-		if (count >= allocated_size)
-		{
+	void add_to_front(T val){
+		
+		if (count >= allocated_size){
 			allocated_size *= 2;
 			realocate(allocated_size);
 		}
 
-		for (int i = count; i > 0; i--)
-		{
+		for (int i = count; i > 0; i--){
 			data[i] = data[i - 1];
 		}
 
@@ -115,25 +96,21 @@ private:
 	int count = 0;
 	int allocated_size = 2;
 
-	void realocate(int new_allocated_size)
-	{
+	void realocate(int new_allocated_size){
 
 		T* new_data = new T[new_allocated_size];
 
-		if (new_data)
-		{
-			for (int i = 0; i < count; i++)
-			{
+		if (new_data){
+			
+			for (int i = 0; i < count; i++){
 				new_data[i] = data[i];
 			}
 			delete[] data;
 			data = new_data;
 		}
-		else
-		{
+		else{
 			cout << "error while realocating memory" << endl;
 			return;
 		}
-		cout << "realocation successed size: " << allocated_size << "number of elements in vector:" << count << endl;
 	}
 };

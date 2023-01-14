@@ -1,10 +1,7 @@
 #define _CRT_SECURE_NO_WARNINGS
 
 #include <stdio.h>
-#include<math.h>
-#include<string.h>
 #include "main.h"
-#include <ctime>
 
 extern "C" {
 #include"./SDL2-2.0.10/include/SDL.h"
@@ -14,7 +11,6 @@ extern "C" {
 #include <iostream>
 #include <cstdlib>
 #include "vector.h"
-#include <iostream>
 #include <filesystem>
 
 using namespace std;
@@ -65,7 +61,6 @@ struct score_t {
 	int traveled_distance = 0;
 };
 
-
 struct final_score_t {
 	double points = 0;
 	double total_time = 0;
@@ -75,7 +70,7 @@ struct menus {
 	bool running = true;
 	bool pause = false;
 	bool save_screen = false;
-	bool list_view = false;
+	bool list_view = true;
 };
 
 struct scores_t {
@@ -105,6 +100,7 @@ struct textures_t {
 	SDL_Texture* bullet = NULL;
 	SDL_Texture* fire = NULL;
 	SDL_Texture* heart = NULL;
+	vector<SDL_Texture**> txt_p;
 };
 
 struct colors_t {
@@ -127,30 +123,8 @@ int main(int argc, char* argv[]) {
 	game_t game;
 	colors_t colors;
 	scores_t saved_scores;
-	
 
-	if (init(window, renderer, screen, scrtex)) {
-		load_charset(charset);
-		textures.red_car = load_texture("car_red.bmp", renderer);
-		textures.grass = load_texture("grass.bmp", renderer);
-		textures.blue_car = load_texture("car_blue.bmp", renderer);
-		textures.green_car = load_texture("car_green.bmp", renderer);
-		textures.bullet = load_texture("bullet.bmp", renderer);
-		textures.fire = load_texture("fire.bmp", renderer);
-		textures.heart = load_texture("heart.bmp", renderer);
-
-		if (charset == NULL || textures.grass == NULL || textures.red_car == NULL || textures.blue_car == NULL
-			|| textures.bullet == NULL || textures.fire == NULL || textures.heart == NULL) {
-			free_textures(textures);
-			free_memory(screen, scrtex, renderer, window);
-			SDL_Quit();
-		}
-	}
-	else {
-		free_memory(screen, scrtex, renderer, window);
-		SDL_Quit();
-	};
-
+	init_game(window, renderer, screen, scrtex, charset, textures);
 	init_colors(colors, screen);
 	generate_start_grass(game);
 
@@ -196,7 +170,6 @@ int main(int argc, char* argv[]) {
 			scroll_grass(game, player_car);
 			SDL_RenderPresent(renderer);
 		}
-
 		events_handling(event, player_car, game, time, saved_scores);
 		cap_fps(game_fps, player_car);
 	}
@@ -209,7 +182,46 @@ int main(int argc, char* argv[]) {
 }
 
 
-//moves fired bullet 
+void init_game(SDL_Window*& window, SDL_Renderer*& renderer, SDL_Surface*& screen, SDL_Texture*& scrtex, SDL_Surface*& charset, textures_t& textures) {
+
+	if (init(window, renderer, screen, scrtex)) {
+		bool charset_loaded = load_charset(charset);
+		bool textures_loaded = load_textures(textures, renderer);
+
+		if (!charset_loaded || !textures_loaded) {
+			free_textures(textures);
+			free_memory(screen, scrtex, renderer, window);
+			SDL_Quit();
+		}
+	}
+	else {
+		free_memory(screen, scrtex, renderer, window);
+		SDL_Quit();
+	};
+}
+
+
+//load all textures needed for game return true if succeed
+bool load_textures(textures_t& textures, SDL_Renderer* renderer) {
+
+	textures.red_car = load_texture("car_red.bmp", renderer, textures.txt_p);
+	textures.grass = load_texture("grass.bmp", renderer, textures.txt_p);
+	textures.blue_car = load_texture("car_blue.bmp", renderer, textures.txt_p);
+	textures.green_car = load_texture("car_green.bmp", renderer, textures.txt_p);
+	textures.bullet = load_texture("bullet.bmp", renderer, textures.txt_p);
+	textures.fire = load_texture("fire.bmp", renderer, textures.txt_p);
+	textures.heart = load_texture("heart.bmp", renderer, textures.txt_p);
+
+	for (int i = 0; i < textures.txt_p.size(); i++) {
+		if (textures.txt_p[i] == NULL) {
+			return false;
+		}
+	}
+	return true;
+}
+
+
+//moves bullets on screen
 void move_bullets(game_t& game) {
 
 	for (int i = 0; i < game.bullets.size(); i++) {
@@ -257,18 +269,23 @@ void manage_cars_position(game_t& game, car_t& player_car, game_time_t& time) {
 
 	for (int i = 0; i < game.cars.size(); i++) {
 
-		//move cars when road shrinks
-		if (game.grass[0].width > game.grass[1].width) {
+		//move cars when road shrinks and they will drive to grass
+		bool road_shrinks = game.grass[0].width > game.grass[1].width;
+		if (road_shrinks) {
+			//car on left grass
 			if (game.cars[i].x < game.grass[0].width) game.cars[i].x += GRASS_WIDTH;
-			else if (game.cars[i].x + CAR_WIDTH / 2 > SCREEN_WIDTH - game.grass[0].width) game.cars[i].x -= GRASS_WIDTH;
+			//car on rigth grass
+			else if (game.cars[i].x + CAR_WIDTH > SCREEN_WIDTH - game.grass[0].width) game.cars[i].x -= GRASS_WIDTH;
+			//car on middle grass
 			if (game.grass[0].width == MIN_GRASS_WIDTH) game.cars[i].x -= GRASS_WIDTH;
 		}
 
+		//move cars according to player speed
 		game.cars[i].y += player_car.speed - game.cars[i].speed;
 
 		//player bumping to other cars
 		if (player_car.y - CAR_HEIGTH < game.cars[i].y && player_car.y > game.cars[i].y && player_car.x + CAR_WIDTH >= game.cars[i].x && player_car.x <= game.cars[i].x + CAR_WIDTH) {
-
+			
 			if (game.power_up.time_left == 0) {
 				destroy_car(player_car, game, time);
 			}
@@ -299,7 +316,6 @@ void manage_cars_position(game_t& game, car_t& player_car, game_time_t& time) {
 				game.bullets.delete_at_index(k);
 			}
 		}
-
 		remove_cars_outside_screen(game);
 	}
 }
@@ -414,14 +430,16 @@ void DrawRectangle(SDL_Surface* screen, int x, int y, int l, int k,
 }
 
 
-SDL_Texture* load_texture(char s[], SDL_Renderer* renderer) {
+SDL_Texture* load_texture(char s[], SDL_Renderer* renderer, vector<SDL_Texture**> &txt_p) {
 	SDL_Surface* carSurface = SDL_LoadBMP(s);
 	if (carSurface == nullptr) {
 		cout << SDL_GetError();
+		txt_p.push_back(NULL);
 		return NULL;
 	}
 	SDL_Texture* texture = SDL_CreateTextureFromSurface(renderer, carSurface);
 	SDL_FreeSurface(carSurface);
+	txt_p.push_back(&texture);
 	return texture;
 }
 
@@ -465,6 +483,20 @@ void show_saves_screen(SDL_Surface* screen, SDL_Surface* charset, SDL_Texture* s
 }
 
 
+template<typename T>
+void load_vector(Vector<T>& vec, FILE* file) {
+
+	int size = 0;
+	fread(&size, sizeof(size), 1, file);
+	vec.clear();
+	for (int i = 0; i < size; i++) {
+		T element = {0};
+		fread(&element, sizeof(element), 1, file);
+		vec.push_back(element);
+	}
+}
+
+
 void load_save(game_t& game, game_time_t& game_time, car_t& car, char file_name[]) {
 
 	strcat(file_name, ".bin");
@@ -473,49 +505,11 @@ void load_save(game_t& game, game_time_t& game_time, car_t& car, char file_name[
 	if (file == NULL) cout << "ERROR WHILE OPENING FILE";
 	else {
 
-		//load game struct
-
-		//laod grass
-		
-		int old_que_count = 0;
-		fread(&old_que_count, sizeof(int), 1, file);
-		game.grass.clear();
-		
-		grass_t saved_grass;
-		for (int i = 0; i < old_que_count; i++) {
-			fread(&saved_grass, sizeof(grass_t), 1, file);
-			game.grass.push_back(saved_grass);
-		}
-
-		//load grass que
-		old_que_count = 0;
-		fread(&old_que_count, sizeof(game.grass_que.size()), 1, file);
-		game.grass_que.clear();
-		int k = 0;
-		for (int i = 0; i < old_que_count; i++) {
-			fread(&k, sizeof(int), 1, file);
-			game.grass_que.push_back(k);
-		}
-
-		//load cars
-		old_que_count = 0;
-		fread(&old_que_count, sizeof(int), 1, file);
-		game.cars.clear();
-		car_t saved_car;
-		for (int i = 0; i < old_que_count; i++) {
-			fread(&saved_car, sizeof(car_t), 1, file);
-			game.cars.push_back(saved_car);
-		}
-
-		//load bullets
-		old_que_count = 0;
-		fread(&old_que_count, sizeof(int), 1, file);
-		game.bullets.clear();
-		bullet_t saved_bullet;
-		for (int i = 0; i < old_que_count; i++) {
-			fread(&saved_bullet, sizeof(bullet_t), 1, file);
-			game.bullets.push_back(saved_bullet);
-		}
+		//load vectors
+		load_vector(game.grass, file);
+		load_vector(game.grass_que, file);
+		load_vector(game.cars, file);
+		load_vector(game.bullets, file);
 
 		fread(&game.score, sizeof(game.score), 1, file);
 		fread(&game.grass_width_on_car_y, sizeof(game.grass_width_on_car_y), 1, file);
@@ -528,6 +522,17 @@ void load_save(game_t& game, game_time_t& game_time, car_t& car, char file_name[
 		fread(&game_time, sizeof(game_time), 1, file);
 		game_time.t1 = SDL_GetTicks();
 		fclose(file);
+	}
+}
+
+
+template<typename T>
+void save_vector(Vector<T> &vec, FILE* file) {
+
+	int size = vec.size();
+	fwrite(&size, sizeof(size), 1, file);
+	for (int i = 0; i < size; i++) {
+		fwrite(&vec[i], sizeof(vec[0]), 1, file);
 	}
 }
 
@@ -547,35 +552,11 @@ void save_game(game_t& game, game_time_t& game_time, car_t& player_car) {
 	if (file == NULL) cout << "ERROR OPENING FILE" << endl;
 	else {
 
-		//save game struct
-
-		//grass vector
-		int size = game.grass.size();
-		fwrite(&size, sizeof(size), 1, file);
-		for (int i = 0; i < game.grass.size(); i++) {
-			fwrite(&game.grass[i], sizeof(game.grass[0]), 1, file);
-		}
-
-		//grass que vector
-		size = game.grass_que.size();
-		fwrite(&size, sizeof(size), 1, file);
-		for (int i = 0; i < game.grass_que.size(); i++) {
-			fwrite(&game.grass_que[i], sizeof(int), 1, file);
-		}
-
-		//cars vector
-		size = game.cars.size();
-		fwrite(&size, sizeof(size), 1, file);
-		for (int i = 0; i < game.cars.size(); i++) {
-			fwrite(&game.cars[i], sizeof(game.cars[0]), 1, file);
-		}
-
-		//bullets vector
-		size = game.bullets.size();
-		fwrite(&size, sizeof(size), 1, file);
-		for (int i = 0; i < game.bullets.size(); i++) {
-			fwrite(&game.bullets[i], sizeof(game.bullets[0]), 1, file);
-		}
+		//save vector
+		save_vector(game.grass, file);
+		save_vector(game.grass_que, file);
+		save_vector(game.cars, file);
+		save_vector(game.bullets, file);
 
 		fwrite(&game.score, sizeof(game.score), 1, file);
 		fwrite(&game.grass_width_on_car_y, sizeof(game.grass_width_on_car_y), 1, file);
@@ -668,10 +649,9 @@ void generate_random_car(textures_t textures, game_t* game, car_t& player_car) {
 				random_car.x = x;
 				random_car.y = 0 - CAR_HEIGTH / 2;
 
-
 				//generate random car speed 
-				// min-half player car speed 
-				// max-player car speed
+				// min - half player car speed 
+				// max - player car speed - 2*SPEED_INCREMENT
 
 				double speed = 0;
 				while (speed < player_car.speed / 2) {
@@ -723,20 +703,21 @@ void generate_random_heart(item_t& heart, game_time_t& time, game_t& game) {
 
 //frees textures memory
 void free_textures(textures_t& textures) {
-	SDL_DestroyTexture(textures.red_car);
-	SDL_DestroyTexture(textures.grass);
-	SDL_DestroyTexture(textures.blue_car);
-	SDL_DestroyTexture(textures.heart);
-	SDL_DestroyTexture(textures.bullet);
-	SDL_DestroyTexture(textures.fire);
+	for (int i = 0; i < textures.txt_p.size(); i++) {
+		SDL_DestroyTexture(*textures.txt_p[i]);
+	}
 }
 
 
 //loads charset bitmap
-void load_charset(SDL_Surface*& charset) {
+bool load_charset(SDL_Surface*& charset) {
 	charset = SDL_LoadBMP("./cs8x8.bmp");
-	if (charset == NULL) cout << SDL_GetError();
+	if (charset == NULL) {
+		cout << SDL_GetError();
+		return false;
+	}
 	SDL_SetColorKey(charset, true, 0x000000);
+	return true;
 }
 
 
@@ -841,13 +822,13 @@ void render_implemented(SDL_Surface* screen, SDL_Surface* charset, SDL_Texture* 
 
 	SDL_UpdateTexture(scrtex, NULL, screen->pixels, screen->pitch);
 
-	SDL_Rect roadRect_left;
-	roadRect_left.x = SCREEN_WIDTH - IMPLEMENTED_WIDTH;
-	roadRect_left.y = SCREEN_HEIGHT - IMPLEMENTED_HEIGHT;
-	roadRect_left.w = IMPLEMENTED_WIDTH;
-	roadRect_left.h = IMPLEMENTED_HEIGHT;
+	SDL_Rect imp_rect;
+	imp_rect.x = SCREEN_WIDTH - IMPLEMENTED_WIDTH;
+	imp_rect.y = SCREEN_HEIGHT - IMPLEMENTED_HEIGHT;
+	imp_rect.w = IMPLEMENTED_WIDTH;
+	imp_rect.h = IMPLEMENTED_HEIGHT;
 
-	SDL_RenderCopy(renderer, scrtex, &roadRect_left, &roadRect_left);
+	SDL_RenderCopy(renderer, scrtex, &imp_rect, &imp_rect);
 }
 
 
@@ -1010,7 +991,7 @@ void render_legend(SDL_Surface* screen, SDL_Surface* charset, game_time_t& time,
 
 	//show power up time left
 	if (game->power_up.time_left > 0) {
-		sprintf(text + strlen(text), " Power up time left: %d s", game->power_up.time_left);
+		sprintf(text + strlen(text), " Power up: %d s", game->power_up.time_left);
 	}
 
 	DrawString(screen, TEXT_CENTER, LEGEND_Y + 20, text, charset);
@@ -1019,13 +1000,13 @@ void render_legend(SDL_Surface* screen, SDL_Surface* charset, game_time_t& time,
 
 	SDL_UpdateTexture(scrtex, NULL, screen->pixels, screen->pitch);
 
-	SDL_Rect roadRect_left;
-	roadRect_left.x = LEGEND_X;
-	roadRect_left.y = LEGEND_Y;
-	roadRect_left.w = SCREEN_WIDTH;
-	roadRect_left.h = LEGEND_HEIGHT;
+	SDL_Rect legend_rec;
+	legend_rec.x = LEGEND_X;
+	legend_rec.y = LEGEND_Y;
+	legend_rec.w = SCREEN_WIDTH;
+	legend_rec.h = LEGEND_HEIGHT;
 
-	SDL_RenderCopy(renderer, scrtex, &roadRect_left, &roadRect_left);
+	SDL_RenderCopy(renderer, scrtex, &legend_rec, &legend_rec);
 }
 
 
@@ -1255,7 +1236,7 @@ void show_pause_screen(SDL_Surface* screen, colors_t& colors, SDL_Surface* chars
 
 
 //loads piceked by user save
-void load_picked_save(SDL_Event& event, game_t& game, game_time_t& time, car_t& player_car, char  saves[10][128]) {
+void load_picked_save(SDL_Event& event, game_t& game, game_time_t& time, car_t& player_car, char  saves[SAVES_NUMBER][128]) {
 	
 	int save_number = event.key.keysym.sym - '0' - 1; //save pressed number on keyboard minus one
 	
@@ -1271,7 +1252,7 @@ void move_hostile_car_to_player(game_t& game, car_t& player_car) {
 	
 	if (!player_car.on_fire) {
 		for (int i = 0; i < game.cars.size(); i++) {
-			int n = (rand() % 2) + 1;
+			int n = (rand() % HOSTILE_CAR_MOVE_PROB) + 1;
 			if (n == 1) {
 				if (game.cars[i].type == HOSTILE) {
 					if (game.cars[i].x > player_car.x) {
