@@ -1152,6 +1152,11 @@ void sort_by_points(scores_t& saved_scores) {
 }
 
 
+void end_game(game_t &game) {
+	game.lives = 0;
+}
+
+
 //handling input
 void events_handling(SDL_Event& event, car_t& car, game_t& game, game_time_t& time, scores_t& saved_scores) {
 
@@ -1187,6 +1192,7 @@ void events_handling(SDL_Event& event, car_t& car, game_t& game, game_time_t& ti
 			else if (event.key.keysym.sym == SDLK_p && game.which_menu.list_view) sort_by_points(saved_scores);
 			else if (event.key.keysym.sym == SDLK_p) stop_game(car, time, game);
 			else if (event.key.keysym.sym == SDLK_s) save_game(game, time, car);
+			else if (event.key.keysym.sym == SDLK_f) end_game(game);
 			else if (event.key.keysym.sym == SDLK_l) game.which_menu.save_screen = true;
 			else if (event.key.keysym.sym == SDLK_a && game.lives == 0) {
 				save_score(game, time, saved_scores);
