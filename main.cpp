@@ -100,7 +100,7 @@ struct textures_t {
 	SDL_Texture* bullet = NULL;
 	SDL_Texture* fire = NULL;
 	SDL_Texture* heart = NULL;
-	vector<SDL_Texture**> txt_p;
+	vector<SDL_Texture*> txt_p;
 };
 
 struct colors_t {
@@ -431,16 +431,16 @@ void DrawRectangle(SDL_Surface* screen, int x, int y, int l, int k,
 }
 
 
-SDL_Texture* load_texture(char s[], SDL_Renderer* renderer, vector<SDL_Texture**> &txt_p) {
+SDL_Texture* load_texture(char s[], SDL_Renderer* renderer, vector<SDL_Texture*> &txt_p) {
 	SDL_Surface* carSurface = SDL_LoadBMP(s);
 	if (carSurface == nullptr) {
-		cout << SDL_GetError();
+		cout << SDL_GetError() << endl;
 		txt_p.push_back(NULL);
 		return NULL;
 	}
 	SDL_Texture* texture = SDL_CreateTextureFromSurface(renderer, carSurface);
 	SDL_FreeSurface(carSurface);
-	txt_p.push_back(&texture);
+	txt_p.push_back(texture);
 	return texture;
 }
 
@@ -503,7 +503,7 @@ void load_save(game_t& game, game_time_t& game_time, car_t& car, char file_name[
 	strcat(file_name, ".bin");
 
 	FILE* file = fopen(file_name, "r");
-	if (file == NULL) cout << "ERROR WHILE OPENING FILE";
+	if (file == NULL) cout << FILE_ERR << endl;
 	else {
 
 		load_vector(game.grass, file);
@@ -548,7 +548,7 @@ void save_game(game_t& game, game_time_t& game_time, car_t& player_car) {
 	strcat(buffer, ".bin");
 
 	FILE* file = fopen(buffer, "w");
-	if (file == NULL) cout << "ERROR OPENING FILE" << endl;
+	if (file == NULL) cout << FILE_ERR << endl;
 	else {
 
 		save_vector(game.grass, file);
@@ -702,7 +702,7 @@ void generate_random_heart(item_t& heart, game_time_t& time, game_t& game) {
 void free_textures(textures_t& textures) {
 	for (int i = 0; i < textures.txt_p.size(); i++) {
 		if (textures.txt_p[i] == NULL) continue;
-		SDL_DestroyTexture(*textures.txt_p[i]);
+		SDL_DestroyTexture(textures.txt_p[i]);
 	}
 }
 
@@ -711,7 +711,7 @@ void free_textures(textures_t& textures) {
 bool load_charset(SDL_Surface*& charset) {
 	charset = SDL_LoadBMP("./cs8x8.bmp");
 	if (charset == NULL) {
-		cout << SDL_GetError();
+		cout << SDL_GetError() << endl;
 		return false;
 	}
 	SDL_SetColorKey(charset, true, 0x000000);
@@ -1267,7 +1267,7 @@ int load_scores_size() {
 	//get total number of saved scores
 	FILE* file = fopen(SAVE_FILE, "r+");
 	int size = 0;
-	if (file == NULL) cout << "ERROR WHILE OPENING FILE";
+	if (file == NULL) cout << FILE_ERR << endl;
 	else {
 		fscanf(file, "%d", &size);
 		fclose(file);
@@ -1280,10 +1280,10 @@ void save_score(game_t& game, game_time_t& time, scores_t& saved_scores) {
 
 	saved_scores.total_saves = load_scores_size() + 1;
 	FILE* file = fopen(SAVE_FILE, "r+");
-	if (file == NULL) cout << "ERROR WHILE OPENING FILE";
+	if (file == NULL) cout << FILE_ERR << endl;
 	else {
 		fseek(file, 0, SEEK_SET);
-		fprintf(file, "%d", saved_scores.total_saves);
+		fprintf(file, "%d\n", saved_scores.total_saves);
 		fseek(file, 0, SEEK_END);
 		fprintf(file, "%.lf\n%.lf\n", game.score.points, time.world_time);
 		fclose(file);
@@ -1299,22 +1299,18 @@ void load_scores_list(scores_t& saved_scores) {
 	if (file == NULL) {
 		file = fopen(SAVE_FILE, "w");
 		saved_scores.total_saves = 0;
-		fprintf(file, "%d", saved_scores.total_saves);
+		fprintf(file, "%d\n", saved_scores.total_saves);
 		fclose(file);
 		return;
 	}
 
 	file = fopen(SAVE_FILE, "r+");
-	int size = load_scores_size();
 	saved_scores.scores.clear();
-	if (file == NULL) {
-		cout << "ERROR WHILE OPENING FILE";
-		return;
-	}
+	
+	if (file == NULL) cout << FILE_ERR << endl;
 	else {
-		saved_scores.total_saves = size;
-		fseek(file, 1, SEEK_SET);
-			for (int i = 0; i < size; i++) {
+		fscanf(file, "%d", &saved_scores.total_saves);
+			for (int i = 0; i < saved_scores.total_saves; i++) {
 				final_score_t final_score = { 0 };
 				fscanf(file, "%lf", &final_score.points);
 				fscanf(file, "%lf", &final_score.total_time);
@@ -1344,7 +1340,7 @@ void show_list_screen(SDL_Surface* screen, colors_t& colors, SDL_Surface* charse
 	DrawString(screen, TEXT_CENTER, LIST_SCREEN_Y + 2*NEXT_LINE_Y, text, charset);
 	for (int i = 0; i < saved_scores.total_saves; i++) {
 		sprintf(text, "%d) %.lf points in %.lf seconds", i + 1, saved_scores.scores[i].points, saved_scores.scores[i].total_time);
-		DrawString(screen, TEXT_CENTER, LIST_SCREEN_Y + (3+i)*NEXT_LINE_Y, text, charset);
+		DrawString(screen, TEXT_CENTER, LIST_SCREEN_Y + (4+i)*NEXT_LINE_Y, text, charset);
 	}
 
 	SDL_UpdateTexture(scrtex, NULL, screen->pixels, screen->pitch);
