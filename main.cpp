@@ -132,7 +132,7 @@ int main(int argc, char* argv[]) {
 
 		if (game.which_menu.save_screen) {
 			char saves[SAVES_NUMBER][128] = { 0 };
-			load_saves(saves);
+			get_saves_name(saves);
 			show_saves_screen(screen, charset, scrtex, renderer, event, saves, colors);
 			load_picked_save(event, game, time, player_car, saves);
 		}
@@ -445,17 +445,21 @@ SDL_Texture* load_texture(char s[], SDL_Renderer* renderer, vector<SDL_Texture*>
 }
 
 
-//loads save names from file to array; returns number of saves
-void load_saves(char saves[SAVES_NUMBER][128]) {
-	char path[] = "./";
-	char extension[] = ".bin";
+//loads names of saves to array;
+void get_saves_name(char saves[SAVES_NUMBER][128]) {
 
-	int i = 0;
-	for (const auto& entry : filesystem::directory_iterator(path)) {
-		if (entry.path().extension() == extension) {
-			strcpy(saves[i], entry.path().stem().string().c_str());
-			i++;
+	FILE* file = fopen(SAVES_FILE, "r+");
+
+	if (file == NULL) cout << FILE_ERR << endl;
+	else {
+		int size = 0;
+		fscanf(file, "%d", &size);
+		for (int i = 0; i < size; i++) {
+			char s[128];
+			fscanf(file, "%s", s);
+			strncpy(saves[i], s, 128);
 		}
+		fclose(file);
 	}
 }
 
@@ -484,6 +488,7 @@ void show_saves_screen(SDL_Surface* screen, SDL_Surface* charset, SDL_Texture* s
 }
 
 
+//loads saved vector from file
 template<typename T>
 void load_vector(Vector<T>& vec, FILE* file) {
 
@@ -525,6 +530,7 @@ void load_save(game_t& game, game_time_t& game_time, car_t& car, char file_name[
 }
 
 
+//save vector to file
 template<typename T>
 void save_vector(Vector<T>& vec, FILE* file) {
 
@@ -533,6 +539,40 @@ void save_vector(Vector<T>& vec, FILE* file) {
 	for (int i = 0; i < size; i++) {
 		fwrite(&vec[i], sizeof(vec[0]), 1, file);
 	}
+}
+
+
+//get total number of saved scores
+int load_saves_size() {
+	
+	int size = 0;
+	FILE* file = fopen(SAVES_FILE, "r+");
+	if (file == NULL) cout << FILE_ERR << endl;
+	else {
+		fscanf(file, "%d", &size);
+		fclose(file);
+	}
+	return size;
+}
+
+
+void save_file_name(char file_name[]) {
+
+	FILE* file = fopen(SAVES_FILE, "r+");
+
+	//create file if does not exist
+	if (file == NULL) {
+		file = fopen(SAVES_FILE, "w");
+		int saves_number = 0;
+		fprintf(file, "%d\n", saves_number);
+	}
+
+	int saves_number = load_saves_size() + 1;
+	fseek(file, 0, SEEK_SET);
+	fprintf(file, "%d\n", saves_number);
+	fseek(file, 0, SEEK_END);
+	fprintf(file, "%s\n", file_name);
+	fclose(file);
 }
 
 
@@ -545,9 +585,12 @@ void save_game(game_t& game, game_time_t& game_time, car_t& player_car) {
 	time(&rawtime);
 	timeinfo = localtime(&rawtime);
 	strftime(buffer, 128, "%d-%m-%Y-%H-%M-%S", timeinfo);
-	strcat(buffer, ".bin");
+	
+	save_file_name(buffer);
 
+	strcat(buffer, ".bin");
 	FILE* file = fopen(buffer, "w");
+	
 	if (file == NULL) cout << FILE_ERR << endl;
 	else {
 
@@ -1274,7 +1317,7 @@ void move_hostile_car_to_player(game_t& game, car_t& player_car) {
 int load_scores_size() {
 
 	//get total number of saved scores
-	FILE* file = fopen(SAVE_FILE, "r+");
+	FILE* file = fopen(SCORES_FILE, "r+");
 	int size = 0;
 	if (file == NULL) cout << FILE_ERR << endl;
 	else {
@@ -1288,7 +1331,7 @@ int load_scores_size() {
 void save_score(game_t& game, game_time_t& time, scores_t& saved_scores) {
 
 	saved_scores.total_saves = load_scores_size() + 1;
-	FILE* file = fopen(SAVE_FILE, "r+");
+	FILE* file = fopen(SCORES_FILE, "r+");
 	if (file == NULL) cout << FILE_ERR << endl;
 	else {
 		fseek(file, 0, SEEK_SET);
@@ -1302,18 +1345,18 @@ void save_score(game_t& game, game_time_t& time, scores_t& saved_scores) {
 //loads saved scores into array
 void load_scores_list(scores_t& saved_scores) {
 
-	FILE* file = fopen(SAVE_FILE, "r");
+	FILE* file = fopen(SCORES_FILE, "r");
 
 	//create file if does not exist
 	if (file == NULL) {
-		file = fopen(SAVE_FILE, "w");
+		file = fopen(SCORES_FILE, "w");
 		saved_scores.total_saves = 0;
 		fprintf(file, "%d\n", saved_scores.total_saves);
 		fclose(file);
 		return;
 	}
 
-	file = fopen(SAVE_FILE, "r+");
+	file = fopen(SCORES_FILE, "r+");
 	saved_scores.scores.clear();
 
 	if (file == NULL) cout << FILE_ERR << endl;

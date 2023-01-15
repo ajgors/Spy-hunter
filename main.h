@@ -58,7 +58,8 @@ using namespace std;
 #define MAX_CARS 6
 #define NORMAL 0				//Random car type - Normal
 #define HOSTILE 1				//Random car type - Hostile
-#define SAVE_FILE "scores.txt"
+#define SCORES_FILE "scores.txt"
+#define SAVES_FILE "saves.txt"
 #define FILE_ERR "ERROR WHILE OPENING FILE"
 
 struct car_t;
@@ -90,7 +91,7 @@ void render_grass(game_t& game, SDL_Renderer* renderer, SDL_Texture* roadTexture
 void render_implemented(SDL_Surface* screen, SDL_Surface* charset, SDL_Texture* scrtex, SDL_Renderer* renderer, colors_t& colors);
 void stop_game(car_t& car, game_time_t& time, game_t& game);
 SDL_Texture* load_texture(char s[], SDL_Renderer* renderer, vector<SDL_Texture*>& txt_p);
-void load_saves(char saves[SAVES_NUMBER][128]);
+void get_saves_name(char saves[SAVES_NUMBER][128]);
 void show_saves_screen(SDL_Surface* screen, SDL_Surface* charset, SDL_Texture* scrtex, SDL_Renderer* renderer, SDL_Event& event, char saves[SAVES_NUMBER][128], colors_t& colors);
 void load_save(game_t& game, game_time_t& game_time, car_t& car, char file_name[]);
 void DrawString(SDL_Surface* screen, int x, int y, const char* text, SDL_Surface* charset);
