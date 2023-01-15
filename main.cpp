@@ -658,7 +658,7 @@ void generate_random_car(textures_t textures, game_t* game, car_t& player_car) {
 						else speed = player_car.speed - SPEED_INCREMENT;
 					}
 				}
-				
+
 				random_car.speed = speed;
 
 				//generate type of car HOSITLE or NORMAL
