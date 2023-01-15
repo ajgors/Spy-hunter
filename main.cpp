@@ -299,6 +299,7 @@ void manage_cars_position(game_t& game, car_t& player_car, game_time_t& time) {
 		game.cars[i].y += player_car.speed - game.cars[i].speed;
 
 		//player bumping to other cars
+		//destory player car if bumps other car from behind
 		if (player_car.y - CAR_HEIGTH < game.cars[i].y && player_car.y > game.cars[i].y && player_car.x + CAR_WIDTH >= game.cars[i].x && player_car.x <= game.cars[i].x + CAR_WIDTH) {
 
 			if (game.power_up.time_left == 0) {
@@ -309,6 +310,7 @@ void manage_cars_position(game_t& game, car_t& player_car, game_time_t& time) {
 		}
 
 		//other cars bumping to each other
+		//car that was bumped gains speed;
 		for (int k = 0; k < game.cars.size(); k++) {
 			if (k == i) continue;
 			if (game.cars[i].y - CAR_HEIGTH < game.cars[k].y && game.cars[i].y > game.cars[k].y && game.cars[i].x + CAR_WIDTH >= game.cars[k].x && game.cars[i].x <= game.cars[k].x + CAR_WIDTH) {
@@ -325,7 +327,7 @@ void manage_cars_position(game_t& game, car_t& player_car, game_time_t& time) {
 					game.score.halted_at = SDL_GetTicks();
 				}
 				else if (game.cars[i].type == HOSTILE) {
-					//add poits for shoting hostile car
+					//add points for shoting hostile car
 					game.score.points += 100;
 				}
 				game.cars.delete_at_index(i);
@@ -514,7 +516,7 @@ void load_vector(Vector<T>& vec, FILE* file) {
 //loads piceked by user save
 void load_picked_save(SDL_Event& event, game_t& game, game_time_t& time, car_t& player_car, char  saves[SAVES_NUMBER][128]) {
 
-	int save_number = event.key.keysym.sym - '0' - 1; //save pressed number on keyboard minus one
+	int save_number = event.key.keysym.sym - '0' - 1; //save pressed number on keyboard minus one (as index of array saves)
 	if (event.key.keysym.sym - '0' == 0) save_number = 9;
 	
 	if (save_number >= 0 && save_number < SAVES_NUMBER) {
@@ -667,7 +669,7 @@ bool pick_up_item(car_t& player_car, item_t& item) {
 
 	bool picked = true;
 
-	//check if heart and car are in collision
+	//check if item and car are in collision
 	if (bottom_item <= top_car) picked = false;
 	if (top_item >= bottom_car) picked = false;
 	if (rigth_item <= left_car) picked = false;
@@ -1240,7 +1242,7 @@ void render_car(car_t& car, SDL_Renderer* renderer, SDL_Texture* carTexture) {
 }
 
 
-//rendres bullets
+//renders bullets
 void render_bullet(SDL_Renderer* renderer, game_t& game, SDL_Texture* bullet_texture) {
 
 	for (int i = 0; i < game.bullets.size(); i++) {
