@@ -793,11 +793,13 @@ void destroy_car(car_t& player_car, game_t& game, game_time_t& time) {
 void check_for_grass_colision(car_t& player_car, game_t& game, game_time_t& time) {
 
 	if (!player_car.on_fire) {
-		bool car_on_left_grass = player_car.x + CAR_WIDTH / 2 <= game.grass_width_on_car_y;
-		bool car_on_right_grass = player_car.x + CAR_WIDTH / 2 >= SCREEN_WIDTH - game.grass_width_on_car_y;
-		bool car_on_middle_grass = player_car.x == SCREEN_WIDTH / 2 - GRASS_WIDTH / 2;
+		
+		//Check if car is half or more in grass if so destroy car
+		bool car_on_left_grass = player_car.x + CAR_WIDTH/2 <= game.grass_width_on_car_y;
+		bool car_on_right_grass = player_car.x + CAR_WIDTH/2 >= SCREEN_WIDTH - game.grass_width_on_car_y;
+		bool car_on_middle_grass = player_car.x + CAR_WIDTH/2 >= SCREEN_WIDTH/2 - GRASS_WIDTH/2 && player_car.x + CAR_WIDTH/2<= SCREEN_WIDTH/2 + GRASS_WIDTH/2 && game.grass_width_on_car_y == MIN_GRASS_WIDTH;
 
-		if (car_on_left_grass || car_on_right_grass || (car_on_middle_grass && game.grass_width_on_car_y == MIN_GRASS_WIDTH)) {
+		if (car_on_left_grass || car_on_right_grass || car_on_middle_grass) {
 			destroy_car(player_car, game, time);
 		}
 	}
@@ -1249,10 +1251,10 @@ void move_hostile_car_to_player(game_t& game, car_t& player_car) {
 			int n = (rand() % HOSTILE_CAR_MOVE_PROB) + 1;
 			if (n == 1) {
 				if (game.cars[i].type == HOSTILE) {
-					if (game.cars[i].x > player_car.x) {
+					if (game.cars[i].x - CAR_MOVE_PIXELS > player_car.x) {
 						game.cars[i].x -= CAR_MOVE_PIXELS;
 					}
-					else if (game.cars[i].x < player_car.x) {
+					else if (game.cars[i].x + CAR_MOVE_PIXELS < player_car.x) {
 						game.cars[i].x += CAR_MOVE_PIXELS;
 					}
 				}

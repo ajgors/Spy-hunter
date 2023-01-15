@@ -38,28 +38,26 @@ using namespace std;
 #define LIST_SCREEN_Y 34
 #define NEXT_LINE_Y 16
 #define GAME_OVER_Y 50
-#define OUT_OF_SCREEN -1
 #define TEXT_CENTER screen->w / 2 - strlen(text) * 8 / 2
 //probability constants
-#define ITEM_PROB 1000
-#define CAR_PROB 100
-#define HOSTILE_CAR_MOVE_PROB 2
+#define ITEM_PROB 1000			//Random item probability
+#define CAR_PROB 100			//Random car probability
+#define HOSTILE_CAR_MOVE_PROB 2 //Hostile car move probability
 //additional constants
 #define FPS 60
 #define ERROR 0
 #define SUCCESS 1
 #define CAR_MOVE_PIXELS 3
-#define CARS_NUMBER 10
+#define CARS_NUMBER 10			//Max number of random cars
 #define START_LIVES 3
 #define SAVES_NUMBER 10
 #define BULLET_SPEED 7
 #define SPEED_INCREMENT 1
 #define MAX_SPEED 12
 #define START_SPEED 4
-#define GRASS_SPEED 4
 #define MAX_CARS 6
-#define NORMAL 0
-#define HOSTILE 1
+#define NORMAL 0				//Random car type - Normal
+#define HOSTILE 1				//Random car type - Hostile
 #define SAVE_FILE "scores.txt"
 #define FILE_ERR "ERROR WHILE OPENING FILE"
 
