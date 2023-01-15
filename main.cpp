@@ -132,6 +132,7 @@ int main(int argc, char* argv[]) {
 
 		if (game.which_menu.save_screen) {
 			char saves[SAVES_NUMBER][128] = { 0 };
+			game.which_menu.list_view = false;
 			get_saves_name(saves);
 			show_saves_screen(screen, charset, scrtex, renderer, event, saves, colors);
 			load_picked_save(event, game, time, player_car, saves);
@@ -454,10 +455,17 @@ void get_saves_name(char saves[SAVES_NUMBER][128]) {
 	else {
 		int size = 0;
 		fscanf(file, "%d", &size);
+		
+		//load last 10 saves
+		if (size > SAVES_NUMBER){
+			fseek(file, -SIZEOF_SAVE_STRING*SAVES_NUMBER, SEEK_END);
+			size = SAVES_NUMBER;
+		}
+
 		for (int i = 0; i < size; i++) {
 			char s[128];
 			fscanf(file, "%s", s);
-			strncpy(saves[i], s, 128);
+			strcpy_s(saves[i], s);
 		}
 		fclose(file);
 	}
@@ -473,7 +481,7 @@ void show_saves_screen(SDL_Surface* screen, SDL_Surface* charset, SDL_Texture* s
 	sprintf(text, " press number to load save");
 	DrawString(screen, TEXT_CENTER, SAVES_Y + NEXT_LINE_Y, text, charset);
 
-	//prints all saves
+	//prints last 10 saves
 	for (int i = 0; i < SAVES_NUMBER; i++) {
 		if (saves[i][0] == '\0') break;
 		_itoa(i + 1, text, 10);
@@ -507,7 +515,8 @@ void load_vector(Vector<T>& vec, FILE* file) {
 void load_picked_save(SDL_Event& event, game_t& game, game_time_t& time, car_t& player_car, char  saves[SAVES_NUMBER][128]) {
 
 	int save_number = event.key.keysym.sym - '0' - 1; //save pressed number on keyboard minus one
-
+	if (event.key.keysym.sym - '0' == 0) save_number = 9;
+	
 	if (save_number >= 0 && save_number < SAVES_NUMBER) {
 		load_save(game, time, player_car, saves[save_number]);
 		game.which_menu.save_screen = false;
@@ -567,20 +576,38 @@ int load_size_from_file(char file_name[128]) {
 }
 
 
+void create_file(char file_name[]) {
+	
+	FILE *file = fopen(file_name, "w");
+	int saves_number = 0;
+	fprintf(file, "%d\n", saves_number);
+	fclose(file);
+}
+
+
 void save_file_name(char file_name[]) {
 
 	FILE* file = fopen(SAVES_FILE, "r+");
 
 	//create file if does not exist
 	if (file == NULL) {
-		file = fopen(SAVES_FILE, "w");
-		int saves_number = 0;
-		fprintf(file, "%d\n", saves_number);
+		create_file(SAVES_FILE);
+		file = fopen(SAVES_FILE, "r+");
+	}
+	
+	int saves_number = load_size_from_file(SAVES_FILE) + 1;
+	
+	//delete oldest save if there are more than 10 saves
+	if (saves_number > SAVES_NUMBER) {
+		fseek(file, -SIZEOF_SAVE_STRING * SAVES_NUMBER, SEEK_END);
+		char to_delete[128];
+		fscanf(file, "%s", to_delete);
+		strcat(to_delete, ".bin");
+		remove(to_delete);
 	}
 
-	int saves_number = load_size_from_file(SAVES_FILE) + 1;
 	fseek(file, 0, SEEK_SET);
-	fprintf(file, "%d\n", saves_number);
+	fprintf(file, "%d", saves_number);
 	fseek(file, 0, SEEK_END);
 	fprintf(file, "%s\n", file_name);
 	fclose(file);
@@ -1329,14 +1356,11 @@ void save_score(game_t& game, game_time_t& time, scores_t& saved_scores) {
 //loads saved scores into array
 void load_scores_list(scores_t& saved_scores) {
 
-	FILE* file = fopen(SCORES_FILE, "r");
+	FILE* file = fopen(SCORES_FILE, "r+");
 
 	//create file if does not exist
 	if (file == NULL) {
-		file = fopen(SCORES_FILE, "w");
-		saved_scores.total_saves = 0;
-		fprintf(file, "%d\n", saved_scores.total_saves);
-		fclose(file);
+		create_file(SCORES_FILE);
 		return;
 	}
 
@@ -1359,6 +1383,7 @@ void load_scores_list(scores_t& saved_scores) {
 
 //shows best saved games screen
 void show_list_screen(SDL_Surface* screen, colors_t& colors, SDL_Surface* charset, SDL_Texture* scrtex, SDL_Renderer* renderer, scores_t& saved_scores, game_t& game) {
+	
 	SDL_FillRect(screen, NULL, colors.czarny);
 
 	char text[128];
@@ -1372,7 +1397,7 @@ void show_list_screen(SDL_Surface* screen, colors_t& colors, SDL_Surface* charse
 	DrawString(screen, TEXT_CENTER, LIST_SCREEN_Y, text, charset);
 	sprintf(text, "sort by: time - t, points - p");
 	DrawString(screen, TEXT_CENTER, LIST_SCREEN_Y + NEXT_LINE_Y, text, charset);
-	sprintf(text, "Click n for new game");
+	sprintf(text, "Click n for new game, l to load save");
 	DrawString(screen, TEXT_CENTER, LIST_SCREEN_Y + 2 * NEXT_LINE_Y, text, charset);
 	for (int i = 0; i < saved_scores.total_saves; i++) {
 		sprintf(text, "%d) %.lf points in %.lf seconds", i + 1, saved_scores.scores[i].points, saved_scores.scores[i].total_time);
