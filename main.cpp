@@ -201,6 +201,20 @@ void init_game(SDL_Window*& window, SDL_Renderer*& renderer, SDL_Surface*& scree
 }
 
 
+SDL_Texture* load_texture(char s[], SDL_Renderer* renderer, vector<SDL_Texture*>& txt_p) {
+	SDL_Surface* carSurface = SDL_LoadBMP(s);
+	if (carSurface == nullptr) {
+		cout << SDL_GetError() << endl;
+		txt_p.push_back(NULL);
+		return NULL;
+	}
+	SDL_Texture* texture = SDL_CreateTextureFromSurface(renderer, carSurface);
+	SDL_FreeSurface(carSurface);
+	txt_p.push_back(texture);
+	return texture;
+}
+
+
 //load all textures needed for game, return true if succeed
 bool load_textures(textures_t& textures, SDL_Renderer* renderer) {
 
@@ -431,20 +445,6 @@ void DrawRectangle(SDL_Surface* screen, int x, int y, int l, int k,
 }
 
 
-SDL_Texture* load_texture(char s[], SDL_Renderer* renderer, vector<SDL_Texture*>& txt_p) {
-	SDL_Surface* carSurface = SDL_LoadBMP(s);
-	if (carSurface == nullptr) {
-		cout << SDL_GetError() << endl;
-		txt_p.push_back(NULL);
-		return NULL;
-	}
-	SDL_Texture* texture = SDL_CreateTextureFromSurface(renderer, carSurface);
-	SDL_FreeSurface(carSurface);
-	txt_p.push_back(texture);
-	return texture;
-}
-
-
 //loads names of saves to array;
 void get_saves_name(char saves[SAVES_NUMBER][128]) {
 
@@ -503,6 +503,18 @@ void load_vector(Vector<T>& vec, FILE* file) {
 }
 
 
+//loads piceked by user save
+void load_picked_save(SDL_Event& event, game_t& game, game_time_t& time, car_t& player_car, char  saves[SAVES_NUMBER][128]) {
+
+	int save_number = event.key.keysym.sym - '0' - 1; //save pressed number on keyboard minus one
+
+	if (save_number >= 0 && save_number < SAVES_NUMBER) {
+		load_save(game, time, player_car, saves[save_number]);
+		game.which_menu.save_screen = false;
+	}
+}
+
+
 void load_save(game_t& game, game_time_t& game_time, car_t& car, char file_name[]) {
 
 	strcat(file_name, ".bin");
@@ -542,11 +554,10 @@ void save_vector(Vector<T>& vec, FILE* file) {
 }
 
 
-//get total number of saved scores
-int load_saves_size() {
-	
+int load_size_from_file(char file_name[128]) {
+
+	FILE* file = fopen(file_name, "r+");
 	int size = 0;
-	FILE* file = fopen(SAVES_FILE, "r+");
 	if (file == NULL) cout << FILE_ERR << endl;
 	else {
 		fscanf(file, "%d", &size);
@@ -567,7 +578,7 @@ void save_file_name(char file_name[]) {
 		fprintf(file, "%d\n", saves_number);
 	}
 
-	int saves_number = load_saves_size() + 1;
+	int saves_number = load_size_from_file(SAVES_FILE) + 1;
 	fseek(file, 0, SEEK_SET);
 	fprintf(file, "%d\n", saves_number);
 	fseek(file, 0, SEEK_END);
@@ -676,7 +687,6 @@ int generate_random_x_on_road(game_t* game) {
 
 void generate_random_car(textures_t textures, game_t* game, car_t& player_car) {
 
-
 	if (player_car.speed > 0) {
 		if (game->cars.size() <= MAX_CARS) {
 			int n = (rand() % CAR_PROB) + 1;
@@ -730,12 +740,14 @@ void generate_random_item(item_t& item, game_time_t& time, game_t& game) {
 	}
 }
 
+
 void generate_random_power_up(item_t& power_up, game_time_t& time, game_t& game) {
 
 	if (power_up.time_left == 0) {
 		generate_random_item(power_up, time, game);
 	}
 }
+
 
 //generates heart when in unlimited lives stage
 void generate_random_heart(item_t& heart, game_time_t& time, game_t& game) {
@@ -1017,9 +1029,11 @@ void cap_fps(fps_t& game_fps, car_t& car) {
 	}
 }
 
+
 void calculate_power_up_time_left(game_t& game) {
 	game.power_up.time_left = (POWER_UP_TIME - (SDL_GetTicks() - game.power_up.activation_time)) / 1000;
 }
+
 
 //renders legend containins game informations
 void render_legend(SDL_Surface* screen, SDL_Surface* charset, game_time_t& time, SDL_Renderer* renderer, SDL_Texture* scrtex, game_t* game, colors_t& colors, car_t& player_car) {
@@ -1070,7 +1084,6 @@ void calculate_time(game_time_t& time) {
 
 //fire a bullet (can fire every 0.5 second)
 void fire_bullet(game_t& game, car_t& player_car) {
-
 	if (!player_car.on_fire) {
 		int time_since_last_shot = SDL_GetTicks() - game.bullets[game.bullets.size() - 1].fired_time;
 
@@ -1084,7 +1097,6 @@ void fire_bullet(game_t& game, car_t& player_car) {
 
 
 void sort_by_time(scores_t& saved_scores) {
-
 	for (int i = 0; i < saved_scores.scores.size(); ++i) {
 		for (int j = 0; j < saved_scores.scores.size() - 1; ++j) {
 			if (saved_scores.scores[j].total_time < saved_scores.scores[i].total_time) {
@@ -1099,7 +1111,6 @@ void sort_by_time(scores_t& saved_scores) {
 
 
 void sort_by_points(scores_t& saved_scores) {
-
 	for (int i = 0; i < saved_scores.scores.size(); ++i) {
 		for (int j = 0; j < saved_scores.scores.size() - 1; ++j) {
 			if (saved_scores.scores[j].points < saved_scores.scores[i].points) {
@@ -1163,7 +1174,6 @@ void events_handling(SDL_Event& event, car_t& car, game_t& game, game_time_t& ti
 
 
 void stop_game(car_t& car, game_time_t& time, game_t& game) {
-
 	game.which_menu.pause == false ? game.which_menu.pause = true : game.which_menu.pause = false;
 	time.t1 = SDL_GetTicks();
 }
@@ -1245,7 +1255,6 @@ void render_item(SDL_Renderer* renderer, item_t& item, SDL_Texture* txt, car_t& 
 
 //initializes colors in struct
 void init_colors(colors_t& colors, SDL_Surface* screen) {
-
 	colors.czarny = SDL_MapRGB(screen->format, 0x00, 0x00, 0x00);
 	colors.niebieski = SDL_MapRGB(screen->format, 0x11, 0x11, 0xCC);
 }
@@ -1281,18 +1290,6 @@ void show_pause_screen(SDL_Surface* screen, colors_t& colors, SDL_Surface* chars
 }
 
 
-//loads piceked by user save
-void load_picked_save(SDL_Event& event, game_t& game, game_time_t& time, car_t& player_car, char  saves[SAVES_NUMBER][128]) {
-
-	int save_number = event.key.keysym.sym - '0' - 1; //save pressed number on keyboard minus one
-
-	if (save_number >= 0 && save_number < SAVES_NUMBER) {
-		load_save(game, time, player_car, saves[save_number]);
-		game.which_menu.save_screen = false;
-	}
-}
-
-
 //randomly move hostile car towards player car
 void move_hostile_car_to_player(game_t& game, car_t& player_car) {
 
@@ -1314,23 +1311,9 @@ void move_hostile_car_to_player(game_t& game, car_t& player_car) {
 }
 
 
-int load_scores_size() {
-
-	//get total number of saved scores
-	FILE* file = fopen(SCORES_FILE, "r+");
-	int size = 0;
-	if (file == NULL) cout << FILE_ERR << endl;
-	else {
-		fscanf(file, "%d", &size);
-		fclose(file);
-	}
-	return size;
-}
-
-
 void save_score(game_t& game, game_time_t& time, scores_t& saved_scores) {
 
-	saved_scores.total_saves = load_scores_size() + 1;
+	saved_scores.total_saves = load_size_from_file(SCORES_FILE) + 1;
 	FILE* file = fopen(SCORES_FILE, "r+");
 	if (file == NULL) cout << FILE_ERR << endl;
 	else {
@@ -1341,6 +1324,7 @@ void save_score(game_t& game, game_time_t& time, scores_t& saved_scores) {
 		fclose(file);
 	}
 }
+
 
 //loads saved scores into array
 void load_scores_list(scores_t& saved_scores) {

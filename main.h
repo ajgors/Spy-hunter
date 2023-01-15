@@ -129,3 +129,4 @@ void DrawRectangle(SDL_Surface* screen, int x, int y, int l, int k,
 	Uint32 outlineColor, Uint32 fillColor);
 bool load_textures(textures_t& textures, SDL_Renderer* renderer);
 void init_game(SDL_Window*& window, SDL_Renderer*& renderer, SDL_Surface*& screen, SDL_Texture*& scrtex, SDL_Surface*& charset, textures_t& textures);
+int load_size_from_file(char file_name[128]);
