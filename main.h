@@ -21,7 +21,7 @@ using namespace std;
 #define CAR_HEIGTH 74
 #define CAR_WIDTH 36
 #define SCREEN_WIDTH 650
-#define SCREEN_HEIGHT 480
+#define SCREEN_HEIGHT 640		//Must be a multiple of GRASS_HEIGHT define
 //time constants
 #define CAR_RESPAWN_TIME 1500	// in Miliseconds
 #define INF_LIVES_TIME 30		// in Seconds
@@ -42,12 +42,13 @@ using namespace std;
 //probability constants
 #define ITEM_PROB 1000			//Random item probability
 #define CAR_PROB 100			//Random car probability
-#define HOSTILE_CAR_MOVE_PROB 2 //Hostile car move probability
+#define HOSTILE_CAR_MOVE_PROB 1 //Hostile car move probability
 //additional constants
 #define FPS 60
 #define ERROR 0
 #define SUCCESS 1
 #define CAR_MOVE_PIXELS 3
+#define HOSTILE_CAR_MOVE_PIXELS 2
 #define CARS_NUMBER 10			//Max number of random cars
 #define START_LIVES 3
 #define SAVES_NUMBER 10
@@ -129,5 +130,8 @@ void DrawLine(SDL_Surface* screen, int x, int y, int l, int dx, int dy, Uint32 c
 void DrawRectangle(SDL_Surface* screen, int x, int y, int l, int k,
 	Uint32 outlineColor, Uint32 fillColor);
 bool load_textures(textures_t& textures, SDL_Renderer* renderer);
-void init_game(SDL_Window*& window, SDL_Renderer*& renderer, SDL_Surface*& screen, SDL_Texture*& scrtex, SDL_Surface*& charset, textures_t& textures);
+void init_game(SDL_Window*& window, SDL_Renderer*& renderer, SDL_Surface*& screen, SDL_Texture*& scrtex);
 int load_size_from_file(char file_name[128]);
+void game();
+void game_runing(SDL_Surface* screen, SDL_Surface* charset, SDL_Texture* scrtex, SDL_Renderer* renderer, SDL_Event& event, colors_t& colors, textures_t& textures);
+void load_game_files(SDL_Window*& window, SDL_Renderer*& renderer, SDL_Surface*& screen, SDL_Texture*& scrtex, SDL_Surface*& charset, textures_t& textures);
