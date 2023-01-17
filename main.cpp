@@ -287,10 +287,10 @@ void move_bullets(game_t& game) {
 void remove_cars_outside_screen(game_t& game) {
 
 	for (int i = 0; i < game.cars.size(); i++) {
-		if (game.cars[i].y > SCREEN_HEIGHT + CAR_HEIGTH) {
+		if (game.cars[i].y > SCREEN_HEIGHT + CAR_HEIGHT) {
 			game.cars.delete_at_index(i);
 		}
-		else if (game.cars[i].y + LEGEND_HEIGHT + CAR_HEIGTH < 0) {
+		else if (game.cars[i].y + LEGEND_HEIGHT + CAR_HEIGHT < 0) {
 			game.cars.delete_at_index(i);
 
 		}
@@ -337,7 +337,7 @@ void manage_cars_position(game_t& game, car_t& player_car, game_time_t& time) {
 
 		//player bumping to other cars
 		//destory player car if bumps other car from behind
-		if (player_car.y - CAR_HEIGTH < game.cars[i].y && player_car.y > game.cars[i].y && player_car.x + CAR_WIDTH >= game.cars[i].x && player_car.x <= game.cars[i].x + CAR_WIDTH) {
+		if (player_car.y - CAR_HEIGHT < game.cars[i].y && player_car.y > game.cars[i].y && player_car.x + CAR_WIDTH >= game.cars[i].x && player_car.x <= game.cars[i].x + CAR_WIDTH) {
 
 			if (game.power_up.time_left == 0) {
 				destroy_car(player_car, game, time);
@@ -350,14 +350,14 @@ void manage_cars_position(game_t& game, car_t& player_car, game_time_t& time) {
 		//car that was bumped gains speed;
 		for (int k = 0; k < game.cars.size(); k++) {
 			if (k == i) continue;
-			if (game.cars[i].y - CAR_HEIGTH < game.cars[k].y && game.cars[i].y > game.cars[k].y && game.cars[i].x + CAR_WIDTH >= game.cars[k].x && game.cars[i].x <= game.cars[k].x + CAR_WIDTH) {
+			if (game.cars[i].y - CAR_HEIGHT < game.cars[k].y && game.cars[i].y > game.cars[k].y && game.cars[i].x + CAR_WIDTH >= game.cars[k].x && game.cars[i].x <= game.cars[k].x + CAR_WIDTH) {
 				game.cars[k].speed += SPEED_INCREMENT;
 			}
 		}
 
 		//Check if bullet hit car (when hit removed from map)
 		for (int k = 0; k < game.bullets.size(); k++) {
-			if (game.bullets[k].y - CAR_HEIGTH < game.cars[i].y && game.bullets[k].y > game.cars[i].y && game.bullets[k].x + CAR_WIDTH >= game.cars[i].x && game.bullets[k].x <= game.cars[i].x + CAR_WIDTH) {
+			if (game.bullets[k].y - CAR_HEIGHT < game.cars[i].y && game.bullets[k].y > game.cars[i].y && game.bullets[k].x + CAR_WIDTH >= game.cars[i].x && game.bullets[k].x <= game.cars[i].x + CAR_WIDTH) {
 
 				//save time when car wash shoted
 				if (game.cars[i].type == NORMAL) {
@@ -697,12 +697,12 @@ bool pick_up_item(car_t& player_car, item_t& item) {
 	left_item = item.x;
 	rigth_item = item.x + ITEM_WIDTH;
 	top_item = item.y;
-	bottom_item = item.y + ITEM_HEIGTH;
+	bottom_item = item.y + ITEM_HEIGHT;
 
 	left_car = player_car.x;
 	rigth_car = player_car.x + CAR_WIDTH;
 	top_car = player_car.y;
-	bottom_car = player_car.y + CAR_HEIGTH;
+	bottom_car = player_car.y + CAR_HEIGHT;
 
 	bool picked = true;
 
@@ -763,7 +763,7 @@ void generate_random_car(textures_t textures, game_t* game, car_t& player_car) {
 				int x = generate_random_x_on_road(game);
 				if (x > SCREEN_WIDTH / 2) x -= CAR_WIDTH;
 				random_car.x = x;
-				random_car.y = 0 - CAR_HEIGTH / 2;
+				random_car.y = 0 - CAR_HEIGHT / 2;
 
 				//generate random car speed 
 				// min - half player car speed 
@@ -977,7 +977,7 @@ void render_grass(game_t& game, SDL_Renderer* renderer, SDL_Texture* roadTexture
 		//save grass width on car Y coordiante (used for car grass collision)
 		//save if grass bottomY is betwen car topY and bottomY
 		int grass_bottom = game.grass[i].y + GRASS_HEIGHT;
-		int car_bottom = CAR_Y + CAR_HEIGTH;
+		int car_bottom = CAR_Y + CAR_HEIGHT;
 
 		if (grass_bottom >= CAR_Y && grass_bottom <= car_bottom) {
 			game.grass_width_on_car_y = game.grass[i].width;
@@ -1282,7 +1282,7 @@ void render_car(car_t& car, SDL_Renderer* renderer, SDL_Texture* carTexture) {
 	carRect.x = car.x;
 	carRect.y = car.y;
 	carRect.w = CAR_WIDTH;
-	carRect.h = CAR_HEIGTH;
+	carRect.h = CAR_HEIGHT;
 	SDL_RenderCopy(renderer, carTexture, nullptr, &carRect);
 }
 
@@ -1291,7 +1291,7 @@ void render_car(car_t& car, SDL_Renderer* renderer, SDL_Texture* carTexture) {
 void render_bullet(SDL_Renderer* renderer, game_t& game, SDL_Texture* bullet_texture) {
 
 	for (int i = 0; i < game.bullets.size(); i++) {
-		SDL_Rect bullet_rect = { game.bullets[i].x, game.bullets[i].y, BULLET_WIDTH, BULLET_HEIGTH };
+		SDL_Rect bullet_rect = { game.bullets[i].x, game.bullets[i].y, BULLET_WIDTH, BULLET_HEIGHT };
 		SDL_RenderCopy(renderer, bullet_texture, NULL, &bullet_rect);
 	}
 	move_bullets(game);
@@ -1302,7 +1302,7 @@ void render_bullet(SDL_Renderer* renderer, game_t& game, SDL_Texture* bullet_tex
 void render_fire(SDL_Renderer* renderer, car_t& player_car, SDL_Texture* fire) {
 
 	if (player_car.on_fire) {
-		SDL_Rect fire_rect = { player_car.x, player_car.y, FIRE_WIDTH, FIRE_HEIGTH };
+		SDL_Rect fire_rect = { player_car.x, player_car.y, FIRE_WIDTH, FIRE_HEIGHT };
 		SDL_RenderCopy(renderer, fire, NULL, &fire_rect);
 	}
 }
@@ -1312,7 +1312,7 @@ void render_fire(SDL_Renderer* renderer, car_t& player_car, SDL_Texture* fire) {
 void render_item(SDL_Renderer* renderer, item_t& item, SDL_Texture* txt, car_t& player_car) {
 
 	if (item.is_visible) {
-		SDL_Rect heart_rect = { item.x, item.y, ITEM_WIDTH, ITEM_HEIGTH };
+		SDL_Rect heart_rect = { item.x, item.y, ITEM_WIDTH, ITEM_HEIGHT };
 		SDL_RenderCopy(renderer, txt, NULL, &heart_rect);
 
 		if (item.y >= 0) {

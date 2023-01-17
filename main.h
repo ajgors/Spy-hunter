@@ -10,15 +10,15 @@ using namespace std;
 #define MIN_GRASS_WIDTH GRASS_WIDTH
 #define NUMBER_OF_GRASS_TXT (SCREEN_HEIGHT / GRASS_HEIGHT)
 #define FIRE_WIDTH 100
-#define FIRE_HEIGTH 100
+#define FIRE_HEIGHT 100
 #define ITEM_WIDTH 20
-#define ITEM_HEIGTH 20
+#define ITEM_HEIGHT 20
 #define BULLET_WIDTH 1
-#define BULLET_HEIGTH 10
+#define BULLET_HEIGHT 10
 #define LEGEND_HEIGHT 50
 #define GRASS_HEIGHT 32
 #define GRASS_WIDTH 25
-#define CAR_HEIGTH 74
+#define CAR_HEIGHT 74
 #define CAR_WIDTH 36
 #define SCREEN_WIDTH 650
 #define SCREEN_HEIGHT 640		//Must be a multiple of GRASS_HEIGHT define
