@@ -1157,6 +1157,7 @@ void fire_bullet(game_t& game, car_t& player_car) {
 		if (time_since_last_shot < BULLET_DELAY && game.bullets.size() > 0) return;
 		bullet_t bullet;
 		bullet.fired_time = SDL_GetTicks();
+		bullet.y = player_car.y;
 		bullet.x = player_car.x + CAR_WIDTH / 2;
 		game.bullets.push_back(bullet);
 	}
